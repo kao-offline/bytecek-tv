@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#242424">
+  <title>Bytecek Launcher</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div id="splash" class="splash" aria-hidden="true"><img src="/b.svg" alt=""></div>
+  <main class="shell" id="shell">
+    <header class="brand" aria-label="Bytecek"><img src="/b.svg" alt=""><span>ytecek</span></header>
+
+    <section class="shortcuts" id="shortcuts" aria-label="Applications"></section>
+
+    <aside class="power-panel" id="power-panel" aria-label="Power menu" hidden>
+      <button class="power-item" data-power="poweroff">shutdown</button>
+      <button class="power-item" data-power="reboot">restart</button>
+      <button class="power-item" data-power="suspend">sleep</button>
+    </aside>
+
+    <button class="power-toggle" id="power-toggle" aria-label="Power menu" title="Power menu"></button>
+    <button class="exit" id="exit">exit &gt;</button>
+
+    <div class="modal-backdrop" id="confirm" hidden>
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="confirm-label">
+        <h2 id="confirm-label">u sure</h2>
+        <div class="modal-buttons">
+          <button id="confirm-yes">yes</button><button id="confirm-no">cancel</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="add-modal" hidden>
+      <section class="modal add-modal" role="dialog" aria-modal="true" aria-labelledby="add-label">
+        <h2 id="add-label">add shortcut</h2>
+        <form id="add-form">
+          <label for="shortcut-name">name</label>
+          <input id="shortcut-name" name="name" maxlength="32" autocomplete="off" placeholder="My site" required>
+          <label for="shortcut-url">url</label>
+          <input id="shortcut-url" name="url" type="url" autocomplete="url" placeholder="https://example.com" required>
+          <p class="form-error" id="form-error" role="alert"></p>
+          <div class="modal-buttons"><button type="submit">add</button><button type="button" id="add-cancel">cancel</button></div>
+        </form>
+      </section>
+    </div>
+    <p id="toast" class="toast" role="status" aria-live="polite"></p>
+  </main>
+</body>
+</html>
