@@ -25,9 +25,15 @@ async def main():
           Object.defineProperty(window, 'localStorage', {configurable:true,value:{getItem:k=>mem[k]||null,setItem:(k,v)=>{mem[k]=v;}}});
           window.fetch=async()=>({json:async()=>({token:'test-token'}),ok:true});
         }""")
-        await page.evaluate((UI/'app.js').read_text(encoding='utf-8'))
+        script=(UI/'app.js').read_text(encoding='utf-8')
+        for name,mime in [('spilled.png','image/png'),('ct24.svg','image/svg+xml'),('chrome.svg','image/svg+xml')]:
+            data=base64.b64encode((UI/'icons'/name).read_bytes()).decode()
+            script=script.replace('/icons/'+name,f'data:{mime};base64,{data}')
+        await page.evaluate(script)
+        await page.route('https://www.google.com/s2/**', lambda route: route.abort())
         await page.wait_for_timeout(1500)
         assert await page.locator('.tile').count()==4
+        assert await page.locator('.app-icon').evaluate_all('(imgs)=>imgs.every(i=>i.complete && i.naturalWidth>0)')
         await page.screenshot(path=str(ROOT/'preview.png'),full_page=True)
         await page.locator('.tile.add').click()
         assert await page.locator('#add-modal').is_visible()
@@ -45,6 +51,28 @@ async def main():
         assert await page.locator('#confirm').is_visible()
         await page.keyboard.press('Escape')
         assert not await page.locator('#confirm').is_visible()
+        # Six tiles share the first row; tile seven wraps. Arrow keys follow rows.
+        for i in range(5):
+            await page.locator('.tile.add').click()
+            await page.locator('#shortcut-name').fill(f'Test {i}')
+            await page.locator('#shortcut-url').fill(f'https://example.com/{i}')
+            await page.locator('#add-form button[type=submit]').click()
+        boxes=await page.locator('.tile').evaluate_all('(tiles)=>tiles.map(t=>({x:t.offsetLeft,y:t.offsetTop}))')
+        assert len({b['y'] for b in boxes[:6]})==1, boxes
+        assert boxes[6]['y']>boxes[0]['y'], boxes
+        await page.locator('.tile').first.focus()
+        await page.keyboard.press('ArrowDown')
+        assert await page.locator('.tile:focus').get_attribute('data-index')=='6'
+        await page.keyboard.press('ArrowUp')
+        assert await page.locator('.tile:focus').get_attribute('data-index')=='0'
+        await page.locator('.tile').first.click()
+        assert await page.locator('#launching').is_visible()
+        assert await page.locator('#launch-label').inner_text()=='Opening Spilled'
+        await page.wait_for_timeout(1100)
+        assert not await page.locator('#launching').is_visible()
+        for width in (1920,1280,800,480):
+            await page.set_viewport_size({'width':width,'height':1080})
+            assert await page.evaluate('document.documentElement.scrollWidth<=innerWidth')
         assert not errs,errs
         print('PASS UI: four default shortcuts; add shortcut; power menu; confirmation; exit; Escape; no page errors')
         await browser.close()

@@ -16,7 +16,7 @@ PORT = 8765
 UI = Path(__file__).resolve().parent / 'ui'
 TOKEN = secrets.token_urlsafe(32)
 BROWSER = shutil.which('google-chrome-stable') or shutil.which('google-chrome') or shutil.which('chromium')
-MIMES = {'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml'}
+MIMES = {'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.png':'image/png'}
 
 
 def valid_web_url(value):
@@ -51,7 +51,7 @@ class Handler(BaseHTTPRequestHandler):
         if path == '/':
             path = '/index.html'
         allowed = {'/index.html','/style.css','/app.js','/b.svg'}
-        if path not in allowed:
+        if path not in allowed and path not in {'/icons/spilled.png','/icons/ct24.svg','/icons/chrome.svg'}:
             self.send_error(404)
             return
         file = UI / path[1:]
@@ -91,11 +91,11 @@ class Handler(BaseHTTPRequestHandler):
             if not BROWSER:
                 self.reply_json(500,{'error':'Chromium/Chrome is missing'})
                 return
-            cmd = [BROWSER,'--no-first-run','--no-default-browser-check','--disable-session-crashed-bubble']
+            cmd = [BROWSER,'--user-data-dir='+str(Path.home()/'.config/bytecek-sites'),'--no-first-run','--no-default-browser-check','--disable-session-crashed-bubble']
             if mode == 'app':
                 cmd += [f'--app={url}','--start-fullscreen']
             else:
-                cmd += ['--start-maximized',url]
+                cmd += ['--new-window','--start-fullscreen',url]
             try:
                 subprocess.Popen(cmd,stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,start_new_session=True)
             except OSError as error:

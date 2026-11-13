@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Bytecek
+Description=Bytecek TV startup
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/bytecek
+ScriptFile=/usr/share/plymouth/themes/bytecek/bytecek.script

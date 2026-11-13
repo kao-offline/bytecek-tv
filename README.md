@@ -39,7 +39,7 @@ Reboot after the installer completes.
 ## Troubleshooting
 
 - **F9 doesn't work:** run `pgrep xbindkeys`; `cat /tmp/bytecek-keys.log`.
-- **Black screen:** Ctrl+Alt+F2, log into your original admin account. Check `cat /tmp/bytecek-openbox.log` and `cat /tmp/bytecek-server.log` (logs live in the tvbox user's shared `/tmp`).
+- **Black screen:** Ctrl+Alt+F2, log into your original admin account. Check `cat /home/tvbox/.local/state/bytecek/xsession.log`, `cat /tmp/bytecek-openbox.log` and `cat /tmp/bytecek-server.log` (logs live in the tvbox user's shared `/tmp`).
 - **Streaming stutters:** test `vainfo`, `chrome://gpu`, and the video decoder; hardware decoding varies by GPU/driver and Chrome/Chromium version.
 - **No HDMI audio:** choose your HDMI device with `wpctl status` and `wpctl set-default DEVICE_ID`, assuming PipeWire is active.
 - **TV blank:** on the console run `DISPLAY=:0 xrandr --query`; the installer does not always know the correct output name or TV mode.
@@ -66,6 +66,10 @@ From a separate admin console:
 ```bash
 sudo rm -f /etc/systemd/system/getty@tty1.service.d/bytecek.conf
 sudo rm -f /etc/systemd/logind.conf.d/bytecek.conf
+sudo rm -f /etc/default/grub.d/bytecek.cfg
+sudo plymouth-set-default-theme text
+sudo update-initramfs -u
+sudo update-grub
 sudo systemctl daemon-reload
 sudo rm -f /etc/sudoers.d/bytecek-power /usr/local/sbin/bytecek-power
 sudo rm -rf /opt/bytecek
@@ -93,3 +97,34 @@ GitHub Actions checks shell syntax, the API, and the UI. Pushing a `v*` tag
 also publishes the two bundles and their checksums as a GitHub release.
 Debian boot, HDMI, audio, suspend, and streaming playback require a physical
 hardware check; automated tests do not validate these.
+
+## Kiosk startup and icons
+
+The installer sets `multi-user.target` as the boot target and enables automatic
+login to `tvbox` on tty1 with `agetty --autologin`. No TV account password is
+requested at boot; other accounts and consoles keep their authentication.
+GRUB is hidden with a zero timeout, Linux uses quiet/splash flags, and Plymouth
+displays the original B on charcoal. Firmware logos and encrypted-disk prompts
+are outside account autologin. X startup logs go to
+`/home/tvbox/.local/state/bytecek/xsession.log`; the cursor hides after two seconds.
+If returning to an existing desktop installation, restore `graphical.target`
+with `sudo systemctl set-default graphical.target` after uninstalling.
+
+Launcher and websites use separate browser profiles so closing a website with
+F9 leaves Home alive. Websites open fullscreen without window decorations;
+Chrome opens a separate fullscreen browser window. A short Opening overlay
+acknowledges launch requests; it is not a website loading progress indicator.
+Saved custom shortcuts stay in the launcher's profile across reinstalls.
+Existing shortcuts from the original release's default Chromium profile must be
+added again after this profile change.
+
+Tiles wrap after six entries (including Add Shortcut) on TV displays, four on
+medium displays and three on small ones. Up/down follows rows. Long labels
+truncate visually while retaining their full accessible name and tooltip.
+Bundled logos are documented in `ui/icons/SOURCES.md`. New shortcuts request a
+website icon from Google's favicon service using only the hostname, with an
+offline globe fallback. No URL path or query is sent to that service.
+
+To upgrade, rerun the same bootstrap command and reboot. The installer updates
+the original autostart block as well as the new one. Boot graphics, real window
+focus/F9, HDMI, and power still require testing on the target Debian laptop.

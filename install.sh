@@ -14,7 +14,7 @@ apt-get update
 apt-get install -y --no-install-recommends \
   xorg xinit openbox xbindkeys xdotool xterm x11-xserver-utils \
   chromium python3 dbus-x11 ca-certificates curl unzip sudo fonts-dejavu-core \
-  mesa-va-drivers vainfo alsa-utils
+  mesa-va-drivers vainfo alsa-utils unclutter plymouth plymouth-themes
 # PipeWire for HDMI audio when available (some base images may already include it).
 if apt-cache show pipewire-audio >/dev/null 2>&1;then apt-get install -y --no-install-recommends pipewire-audio wireplumber || true;fi
 if apt-cache show intel-media-va-driver >/dev/null 2>&1;then apt-get install -y --no-install-recommends intel-media-va-driver || true;fi
@@ -23,8 +23,10 @@ if ! id -u tvbox >/dev/null 2>&1;then
   useradd --create-home --shell /bin/bash tvbox
 fi
 install -d -m 755 /opt/bytecek /opt/bytecek/ui
+install -m 644 "$SCRIPT_DIR/openbox.xml" /opt/bytecek/openbox.xml
 install -m 644 "$SCRIPT_DIR/server.py" /opt/bytecek/server.py
 install -m 644 "$SCRIPT_DIR/xbindkeysrc" /opt/bytecek/xbindkeysrc
+install -m 755 "$SCRIPT_DIR/login.sh" /opt/bytecek/login.sh
 install -m 755 "$SCRIPT_DIR/home.sh" /opt/bytecek/home.sh
 install -m 755 "$SCRIPT_DIR/session.sh" /opt/bytecek/session.sh
 install -m 755 "$SCRIPT_DIR/power.sh" /usr/local/sbin/bytecek-power
@@ -35,7 +37,9 @@ SUDOERS
 chmod 440 /etc/sudoers.d/bytecek-power
 visudo -cf /etc/sudoers.d/bytecek-power
 cp -f "$SCRIPT_DIR"/ui/{index.html,style.css,app.js,b.svg} /opt/bytecek/ui/
-chmod 644 /opt/bytecek/ui/*
+install -d -m 755 /opt/bytecek/ui/icons
+install -m 644 "$SCRIPT_DIR"/ui/icons/* /opt/bytecek/ui/icons/
+find /opt/bytecek/ui -type f -exec chmod 644 {} +
 
 PROFILE=/home/tvbox/.bash_profile
 if [[ ! -f "$PROFILE" ]];then touch "$PROFILE";fi
@@ -44,18 +48,24 @@ if ! grep -q 'BYTECEK AUTO START' "$PROFILE";then
 
 # BYTECEK AUTO START - graphical launcher on the local TV console only
 if [[ -z "${DISPLAY:-}" ]] && [[ "$(tty)" == /dev/tty1 ]]; then
-  startx /opt/bytecek/session.sh -- :0 vt1 -nolisten tcp
+  /opt/bytecek/login.sh
 fi
 PROFILE_END
 fi
+# Upgrade profiles written by the original installer as well.
+sed -i 's|^  startx /opt/bytecek/session.sh.*|  /opt/bytecek/login.sh|' "$PROFILE"
 chown tvbox:tvbox "$PROFILE"
+touch /home/tvbox/.hushlogin
+chown tvbox:tvbox /home/tvbox/.hushlogin
 
 mkdir -p /etc/systemd/system/getty@tty1.service.d
 cat >/etc/systemd/system/getty@tty1.service.d/bytecek.conf <<'UNIT'
 [Service]
 ExecStart=
-ExecStart=-/sbin/agetty --autologin tvbox --noclear %I $TERM
+ExecStart=-/sbin/agetty --autologin tvbox --noissue --noclear %I $TERM
 Type=idle
+StandardOutput=tty
+TTYVTDisallocate=yes
 UNIT
 
 # Avoid suspending when the laptop lid closes on an HDMI television.
@@ -67,6 +77,22 @@ HandleLidSwitchExternalPower=ignore
 HandleLidSwitchDocked=ignore
 LOGIND
 
+# Branded initramfs splash and quiet GRUB startup; firmware screens are outside Linux.
+install -d -m 755 /usr/share/plymouth/themes/bytecek
+install -m 644 "$SCRIPT_DIR"/boot/* /usr/share/plymouth/themes/bytecek/
+plymouth-set-default-theme bytecek
+if command -v update-grub >/dev/null 2>&1; then
+  mkdir -p /etc/default/grub.d
+  cat >/etc/default/grub.d/bytecek.cfg <<'GRUB'
+GRUB_TIMEOUT_STYLE=hidden
+GRUB_TIMEOUT=0
+GRUB_CMDLINE_LINUX_DEFAULT="$GRUB_CMDLINE_LINUX_DEFAULT quiet splash loglevel=3 systemd.show_status=false vt.global_cursor_default=0"
+GRUB
+  update-grub
+fi
+update-initramfs -u
+systemctl set-default multi-user.target
+systemctl enable getty@tty1.service
 systemctl daemon-reload
 printf '\nInstalled Bytecek to /opt/bytecek\n'
 printf 'REBOOT to enter the launcher: sudo reboot\n'

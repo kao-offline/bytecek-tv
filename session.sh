@@ -5,7 +5,10 @@ export XDG_CURRENT_DESKTOP=openbox
 export XDG_SESSION_DESKTOP=openbox
 
 # Start a minimal WM, no desktop shell / task bar.
-openbox --sm-disable >/tmp/bytecek-openbox.log 2>&1 &
+xsetroot -solid "#242424"
+unclutter -idle 2 -root &
+CURSOR_PID=$!
+openbox --config-file /opt/bytecek/openbox.xml --sm-disable >/tmp/bytecek-openbox.log 2>&1 &
 WM_PID=$!
 xset s off -dpms >/dev/null 2>&1 || true
 xset s noblank >/dev/null 2>&1 || true
@@ -28,15 +31,20 @@ python3 /opt/bytecek/server.py >/tmp/bytecek-server.log 2>&1 &
 SERVER_PID=$!
 
 cleanup() {
-  kill "$SERVER_PID" "$KEYS_PID" "$WM_PID" 2>/dev/null || true
+  kill "$SERVER_PID" "$KEYS_PID" "$WM_PID" "$CURSOR_PID" 2>/dev/null || true
 }
 trap cleanup EXIT
 
 # Let the local API bind before opening Chromium.
 for _ in {1..40}; do
-  if bash -c 'echo >/dev/tcp/127.0.0.1/8765' 2>/dev/null; then break; fi
+  if curl -fsS http://127.0.0.1:8765/api/config >/dev/null 2>&1; then break; fi
   sleep .1
 done
+
+if ! curl -fsS http://127.0.0.1:8765/api/config >/dev/null 2>&1; then
+  xterm -title 'Bytecek recovery' -e bash -c 'echo "Launcher service failed. Check /tmp/bytecek-server.log"; exec bash'
+  exit 1
+fi
 
 BROWSER="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || true)"
 if [[ -z "$BROWSER" ]]; then
@@ -44,7 +52,8 @@ if [[ -z "$BROWSER" ]]; then
 fi
 
 # Launcher stays open in its own Chromium window. Sites open as separate windows.
-"$BROWSER" --no-first-run --no-default-browser-check --disable-session-crashed-bubble --kiosk 'http://127.0.0.1:8765/' || true
+mkdir -p "$HOME/.config/bytecek-launcher"
+"$BROWSER" --user-data-dir="$HOME/.config/bytecek-launcher" --password-store=basic --noerrdialogs --disable-infobars --no-first-run --no-default-browser-check --disable-session-crashed-bubble --kiosk 'http://127.0.0.1:8765/' || true
 
 # Exit launcher => minimal terminal rather than a blank/black screen.
 echo 'Bytecek launcher exited. Run: chromium --kiosk http://127.0.0.1:8765/'

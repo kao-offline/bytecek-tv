@@ -15,9 +15,9 @@ let priorFocus = null;
 let toastTimer;
 
 const ICONS = {
-  spilled: `<svg viewBox="0 0 100 100" aria-hidden="true"><path fill="#e12929" d="M30 14c-6-4-13 0-13 8v56c0 8 7 12 13 8l54-28c8-4 8-12 0-16z"/></svg>`,
-  ct24: `<svg viewBox="0 0 110 90" aria-hidden="true"><path fill="#101c49" d="M4 31q0-9 9-9h19v12H19v26h13v12H13q-9 0-9-9z"/><path fill="#e12929" d="M35 22h20q8 0 8 9v32q0 9-8 9H35V60h14V34H35z"/><text x="69" y="61" font-family="Arial" font-size="36" font-weight="700" fill="#101c49">24</text></svg>`,
-  chrome: `<svg viewBox="0 0 100 100" aria-hidden="true"><clipPath id="c"><circle cx="50" cy="50" r="45"/></clipPath><g clip-path="url(#c)"><circle cx="50" cy="50" r="45" fill="#e43e32"/><path d="M50 50H103L76 98H37z" fill="#f7c52c"/><path d="M50 50 25 6 -8 50 28 105z" fill="#289e51"/><path d="M50 50H101L83 17H30z" fill="#e43e32"/></g><circle cx="50" cy="50" r="23" fill="white"/><circle cx="50" cy="50" r="19" fill="#2384d4"/></svg>`,
+  spilled: '<img class="app-icon" src="/icons/spilled.png" alt="">',
+  ct24: '<img class="app-icon" src="/icons/ct24.svg" alt="">',
+  chrome: '<img class="app-icon" src="/icons/chrome.svg" alt="">',
   add: `<svg viewBox="0 0 100 100" aria-hidden="true"><path stroke="#292929" stroke-linecap="round" stroke-width="11" d="M50 15v70M15 50h70"/></svg>`,
   custom: `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="34" stroke="#303030" stroke-width="7" fill="none"/><path d="M16 50h68M50 16a52 52 0 0 1 0 68M50 16a52 52 0 0 0 0 68" fill="none" stroke="#303030" stroke-width="5"/></svg>`
 };
@@ -31,13 +31,30 @@ function isValidUrl(value){try{const u=new URL(value);return ['http:','https:'].
 function escapeText(s){return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
 function showToast(message){const t=$('toast');t.textContent=message;t.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('visible'),4000)}
 
+function tileIcon(item){
+  if(item.icon!=='custom')return ICONS[item.icon]||ICONS.custom;
+  // Domain only: paths, query strings and credentials never leave the launcher.
+  const domain=new URL(item.url).hostname;
+  return `<span class="site-fallback">${ICONS.custom}</span><img class="app-icon site-icon" referrerpolicy="no-referrer" src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128" alt="">`;
+}
+function rowTarget(tiles,index,direction){
+  const current=tiles[index].getBoundingClientRect();
+  const candidates=tiles.map((tile,i)=>({i,r:tile.getBoundingClientRect()})).filter(x=>direction*(x.r.top-current.top)>10);
+  if(!candidates.length)return -1;
+  const row=Math.min(...candidates.map(x=>Math.abs(x.r.top-current.top)));
+  return candidates.filter(x=>Math.abs(Math.abs(x.r.top-current.top)-row)<5).sort((a,b)=>Math.abs(a.r.left-current.left)-Math.abs(b.r.left-current.left))[0].i;
+}
 function render(){
   const entries=[...BASE,...shortcuts,{id:'add',name:'Add Shortcut',icon:'add'}];
-  const root=$('shortcuts');root.innerHTML=entries.map((item,index)=>`<button class="tile ${escapeText(item.icon||'custom')}" data-index="${index}" data-id="${escapeText(item.id)}" aria-label="${escapeText(item.name)}" title="${escapeText(item.name)}${item.icon==='custom'?' (Delete to remove)':''}"><span class="tile-square">${ICONS[item.icon]||ICONS.custom}</span><span class="tile-label">${escapeText(item.name)}</span></button>`).join('');
+  const root=$('shortcuts');root.style.setProperty('--columns',Math.min(6,entries.length));root.innerHTML=entries.map((item,index)=>`<button class="tile ${escapeText(item.icon||'custom')}" data-index="${index}" data-id="${escapeText(item.id)}" aria-label="${escapeText(item.name)}" title="${escapeText(item.name)}${item.icon==='custom'?' (Delete to remove)':''}"><span class="tile-square">${tileIcon(item)}</span><span class="tile-label">${escapeText(item.name)}</span></button>`).join('');
   root.querySelectorAll('.tile').forEach(tile=>{
     tile.addEventListener('click',()=>activateTile(Number(tile.dataset.index)));
     tile.addEventListener('focus',()=>{selected=Number(tile.dataset.index)});
     tile.addEventListener('contextmenu',e=>{const x=entries[Number(tile.dataset.index)];if(x.icon!=='custom')return;e.preventDefault();removeShortcut(x.id)})
+  });
+  root.querySelectorAll('.site-icon').forEach(img=>{
+    img.addEventListener('load',()=>img.previousElementSibling.hidden=true);
+    img.addEventListener('error',()=>img.remove());
   });
   selected=Math.min(selected,entries.length-1);
 }
@@ -53,7 +70,11 @@ async function request(path,payload){
 function openAdd(){priorFocus=document.activeElement;$('add-form').reset();$('form-error').textContent='';$('add-modal').hidden=false;$('shortcut-name').focus()}
 function closeAdd(){$('add-modal').hidden=true;(priorFocus&&priorFocus.isConnected?priorFocus:document.querySelector('.tile.add'))?.focus()}
 function removeShortcut(id){const s=shortcuts.find(s=>s.id===id);if(!s)return; if(!window.confirm(`Remove ${s.name}?`))return;shortcuts=shortcuts.filter(x=>x.id!==id);saveShortcuts();render();focusTile(0)}
-function activateTile(index){const items=[...BASE,...shortcuts,{id:'add'}];const item=items[index];if(!item)return;if(item.id==='add'){openAdd();return}request('/api/launch',{url:item.url,mode:item.mode||'app'})}
+let launching=false;
+async function activateTile(index){const items=[...BASE,...shortcuts,{id:'add'}];const item=items[index];if(!item)return;if(item.id==='add'){openAdd();return}if(launching)return;launching=true;
+$('launch-label').textContent='Opening '+item.name;$('launching').hidden=false;
+await request('/api/launch',{url:item.url,mode:item.mode||'app'});
+setTimeout(()=>{$('launching').hidden=true;launching=false},900)}
 function togglePower(force){const panel=$('power-panel');panel.hidden=typeof force==='boolean'?!force:!panel.hidden;if(!panel.hidden){document.querySelector('.power-item').focus()}else{$('power-toggle').focus()}}
 function openConfirm(action){pendingAction=action;priorFocus=document.activeElement; $('confirm').hidden=false;$('confirm-no').focus()}
 function closeConfirm(){$('confirm').hidden=true;(priorFocus?.isConnected?priorFocus:$('power-toggle')).focus()}
@@ -88,8 +109,8 @@ document.addEventListener('keydown',e=>{
   if(target?.classList.contains('tile')){
     if(e.key==='ArrowRight'){focusTile((selected+1)%tiles.length);e.preventDefault()}
     else if(e.key==='ArrowLeft'){focusTile((selected-1+tiles.length)%tiles.length);e.preventDefault()}
-    else if(e.key==='ArrowDown'){$('exit').focus();e.preventDefault()}
-    else if(e.key==='ArrowUp'){$('power-toggle').focus();e.preventDefault()}
+    else if(e.key==='ArrowDown'){const next=rowTarget(tiles,selected,1);if(next>=0)focusTile(next);else $('exit').focus();e.preventDefault()}
+    else if(e.key==='ArrowUp'){const next=rowTarget(tiles,selected,-1);if(next>=0)focusTile(next);else $('power-toggle').focus();e.preventDefault()}
   }else if(target?.id==='exit'||target?.id==='power-toggle'){
     if(e.key==='ArrowUp'){focusTile(selected);e.preventDefault()}
     else if(e.key==='ArrowLeft'){$('power-toggle').focus();e.preventDefault()}

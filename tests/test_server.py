@@ -53,6 +53,17 @@ class LauncherServerTest(unittest.TestCase):
             status,data=self.call('POST','/api/launch',{'url':'https://spilled.kaooffline.top/','mode':'app'})
             self.assertEqual((status,data['ok']),(200,True))
             self.assertIn('--app=https://spilled.kaooffline.top/',popen.call_args[0][0])
+            self.assertTrue(any('bytecek-sites' in arg for arg in popen.call_args[0][0]))
+
+    def test_brand_assets(self):
+        for path, mime in (('/icons/spilled.png','image/png'),('/icons/ct24.svg','image/svg+xml'),('/icons/chrome.svg','image/svg+xml')):
+            conn=http.client.HTTPConnection('127.0.0.1',self.port,timeout=2)
+            conn.request('GET',path)
+            res=conn.getresponse()
+            self.assertEqual(res.status,200)
+            self.assertEqual(res.getheader('Content-Type'),mime)
+            self.assertTrue(res.read())
+            conn.close()
 
     def test_reject_unknown_power(self):
         status,_=self.call('POST','/api/power',{'action':'sudo rm -rf /'})
