@@ -13,7 +13,7 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y --no-install-recommends \
   xorg xinit openbox xbindkeys xdotool xterm x11-xserver-utils \
-  chromium python3 dbus-x11 ca-certificates curl unzip sudo fonts-dejavu-core \
+  chromium python3 python3-tk xdg-desktop-portal-gtk dbus-x11 ca-certificates curl unzip sudo fonts-dejavu-core \
   mesa-va-drivers vainfo alsa-utils unclutter plymouth plymouth-themes
 # PipeWire for HDMI audio when available (some base images may already include it).
 if apt-cache show pipewire-audio >/dev/null 2>&1;then apt-get install -y --no-install-recommends pipewire-audio wireplumber || true;fi
@@ -23,6 +23,10 @@ if ! id -u tvbox >/dev/null 2>&1;then
   useradd --create-home --shell /bin/bash tvbox
 fi
 install -d -m 755 /opt/bytecek /opt/bytecek/ui
+install -d -m 755 /opt/bytecek/boot /opt/bytecek/browser-extension
+install -m 644 "$SCRIPT_DIR"/boot/* /opt/bytecek/boot/
+install -m 644 "$SCRIPT_DIR"/browser-extension/* /opt/bytecek/browser-extension/
+install -m 644 "$SCRIPT_DIR/kiosk_overlay.py" /opt/bytecek/kiosk_overlay.py
 install -m 644 "$SCRIPT_DIR/openbox.xml" /opt/bytecek/openbox.xml
 install -m 644 "$SCRIPT_DIR/server.py" /opt/bytecek/server.py
 install -m 644 "$SCRIPT_DIR/xbindkeysrc" /opt/bytecek/xbindkeysrc
@@ -55,6 +59,9 @@ fi
 # Upgrade profiles written by the original installer as well.
 sed -i 's|^  startx /opt/bytecek/session.sh.*|  /opt/bytecek/login.sh|' "$PROFILE"
 chown tvbox:tvbox "$PROFILE"
+install -d -o tvbox -g tvbox /home/tvbox/.config/xdg-desktop-portal
+printf '[preferred]\ndefault=gtk\n' >/home/tvbox/.config/xdg-desktop-portal/portals.conf
+chown tvbox:tvbox /home/tvbox/.config/xdg-desktop-portal/portals.conf
 touch /home/tvbox/.hushlogin
 chown tvbox:tvbox /home/tvbox/.hushlogin
 
@@ -91,6 +98,8 @@ GRUB
   update-grub
 fi
 update-initramfs -u
+# TV startup does not need printer discovery or a blocking Wi-Fi wait.
+systemctl disable cups-browsed.service NetworkManager-wait-online.service 2>/dev/null || true
 systemctl set-default multi-user.target
 systemctl enable getty@tty1.service
 systemctl daemon-reload

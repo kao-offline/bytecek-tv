@@ -91,7 +91,7 @@ class Handler(BaseHTTPRequestHandler):
             if not BROWSER:
                 self.reply_json(500,{'error':'Chromium/Chrome is missing'})
                 return
-            cmd = [BROWSER,'--user-data-dir='+str(Path.home()/'.config/bytecek-sites'),'--no-first-run','--no-default-browser-check','--disable-session-crashed-bubble']
+            cmd = [BROWSER,'--user-data-dir='+str(Path.home()/'.config/bytecek-sites'),'--password-store=basic','--force-dark-mode','--force-prefers-reduced-motion=reduce','--load-extension=/opt/bytecek/browser-extension','--no-first-run','--no-default-browser-check','--disable-session-crashed-bubble']
             if mode == 'app':
                 cmd += [f'--app={url}','--start-fullscreen']
             else:

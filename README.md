@@ -128,3 +128,26 @@ offline globe fallback. No URL path or query is sent to that service.
 To upgrade, rerun the same bootstrap command and reboot. The installer updates
 the original autostart block as well as the new one. Boot graphics, real window
 focus/F9, HDMI, and power still require testing on the target Debian laptop.
+
+## Smooth startup and fullscreen Home
+
+The X session exports its display environment to D-Bus before Chromium starts;
+this prevents the GTK portal from waiting for a display it cannot find. A native
+dark B cover bridges X startup. Both browser profiles prefer dark UI and reduced
+motion. Website windows use the same password-store backend as the launcher so
+an unavailable desktop keyring cannot silently block first launch.
+
+A small native **Home ? F9** button appears at the top right of website windows.
+Click it or press F9 to close the active site window and focus the launcher. The
+control stays outside website content and does not occupy the top-left back
+navigation area. It disappears on the launcher.
+
+The bundled Chromium extension supplies a temporary dark canvas while page HTML
+arrives. For Spilled only, it reduces animations and backdrop blur; video and
+images remain enabled. This reduces rendering work rather than disabling GPU
+acceleration. Sites may still paint their own white loading screens.
+
+On the tested Dell Inspiron 7348, native Home clicks and F9 both returned to the
+launcher, the GTK portal ran successfully, and Intel accelerated rendering plus
+H.264 decoding were available. Website response time and playback still depend
+on the service, codec, and Wi-Fi connection.

@@ -3,6 +3,9 @@ set -Eeuo pipefail
 export DISPLAY="${DISPLAY:-:0}"
 export XDG_CURRENT_DESKTOP=openbox
 export XDG_SESSION_DESKTOP=openbox
+# D-Bus services must inherit the real X display, otherwise portal startup times out.
+dbus-update-activation-environment --systemd DISPLAY XAUTHORITY XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP || true
+systemctl --user reset-failed xdg-desktop-portal.service xdg-desktop-portal-gtk.service || true
 
 # Start a minimal WM, no desktop shell / task bar.
 xsetroot -solid "#242424"
@@ -10,6 +13,8 @@ unclutter -idle 2 -root &
 CURSOR_PID=$!
 openbox --config-file /opt/bytecek/openbox.xml --sm-disable >/tmp/bytecek-openbox.log 2>&1 &
 WM_PID=$!
+python3 /opt/bytecek/kiosk_overlay.py >/tmp/bytecek-overlay.log 2>&1 &
+OVERLAY_PID=$!
 xset s off -dpms >/dev/null 2>&1 || true
 xset s noblank >/dev/null 2>&1 || true
 
@@ -31,7 +36,7 @@ python3 /opt/bytecek/server.py >/tmp/bytecek-server.log 2>&1 &
 SERVER_PID=$!
 
 cleanup() {
-  kill "$SERVER_PID" "$KEYS_PID" "$WM_PID" "$CURSOR_PID" 2>/dev/null || true
+  kill "$SERVER_PID" "$KEYS_PID" "$WM_PID" "$CURSOR_PID" "$OVERLAY_PID" 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -53,7 +58,7 @@ fi
 
 # Launcher stays open in its own Chromium window. Sites open as separate windows.
 mkdir -p "$HOME/.config/bytecek-launcher"
-"$BROWSER" --user-data-dir="$HOME/.config/bytecek-launcher" --password-store=basic --noerrdialogs --disable-infobars --no-first-run --no-default-browser-check --disable-session-crashed-bubble --kiosk 'http://127.0.0.1:8765/' || true
+"$BROWSER" --user-data-dir="$HOME/.config/bytecek-launcher" --password-store=basic --force-dark-mode --force-prefers-reduced-motion=reduce --noerrdialogs --disable-infobars --no-first-run --no-default-browser-check --disable-session-crashed-bubble --kiosk 'http://127.0.0.1:8765/' || true
 
 # Exit launcher => minimal terminal rather than a blank/black screen.
 echo 'Bytecek launcher exited. Run: chromium --kiosk http://127.0.0.1:8765/'

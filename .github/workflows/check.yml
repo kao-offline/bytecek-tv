@@ -17,6 +17,7 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - run: python -m playwright install --with-deps chromium
       - run: python tests/test_ui.py
+      - run: python tests/test_comfort.py
       - run: python tools/package.py
       - uses: actions/upload-artifact@v4
         with:
