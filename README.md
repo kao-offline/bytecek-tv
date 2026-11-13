@@ -151,3 +151,14 @@ On the tested Dell Inspiron 7348, native Home clicks and F9 both returned to the
 launcher, the GTK portal ran successfully, and Intel accelerated rendering plus
 H.264 decoding were available. Website response time and playback still depend
 on the service, codec, and Wi-Fi connection.
+
+Startup now explicitly says **Starting Bytecek TV...** in Plymouth and the X
+cover; a slow launch keeps a visible status instead of hiding it after a fixed
+timeout. A short power-button press is ignored to prevent accidental shutdown
+while the display changes modes. Use the launcher's power menu for shutdown.
+A hardware-enforced long hold remains an emergency power-off.
+
+The target notebook has also recorded interrupted early boots before the
+launcher starts. Their cause is not established; working launcher tests do not
+prove unattended boot reliability. Diagnostics are retained on that machine at
+`/root/bytecek-boot-diagnostics/`, with frequent journal syncing enabled.

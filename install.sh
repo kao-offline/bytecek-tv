@@ -82,6 +82,9 @@ cat >/etc/systemd/logind.conf.d/bytecek.conf <<'LOGIND'
 HandleLidSwitch=ignore
 HandleLidSwitchExternalPower=ignore
 HandleLidSwitchDocked=ignore
+HandlePowerKey=ignore
+HandlePowerKeyLongPress=poweroff
+IdleAction=ignore
 LOGIND
 
 # Branded initramfs splash and quiet GRUB startup; firmware screens are outside Linux.

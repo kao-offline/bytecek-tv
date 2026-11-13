@@ -19,10 +19,14 @@ root.attributes('-topmost', True)
 root.geometry(f'{root.winfo_screenwidth()}x{root.winfo_screenheight()}+0+0')
 logo = tk.PhotoImage(file='/opt/bytecek/boot/b.png')
 splash = tk.Label(root, image=logo, bg='#242424')
-splash.place(relx=.5, rely=.5, anchor='center')
+splash.place(relx=.5, rely=.46, anchor='center')
+status = tk.Label(root, text='Starting Bytecek TV...', font=('DejaVu Sans', 16),
+                  bg='#242424', fg='#eeeeee')
+status.place(relx=.5, rely=.64, anchor='center')
 started = time.monotonic()
 last_site = ''
 booting = True
+launcher_seen = None
 
 
 def home():
@@ -31,19 +35,27 @@ def home():
     root.withdraw()
 
 
-button = tk.Button(root, text='Home  ?  F9', command=home, bg='#303030', fg='white',
+button = tk.Button(root, text='Home  |  F9', command=home, bg='#303030', fg='white',
                    activebackground='#b82020', activeforeground='white',
                    font=('DejaVu Sans', 13), relief='flat', borderwidth=0, cursor='hand2')
 
 
 def poll():
-    global booting, last_site
+    global booting, last_site, launcher_seen
     if booting:
         launcher = output('xdotool', 'search', '--onlyvisible', '--name', '^Bytecek Launcher( - .*)?$')
-        if launcher or time.monotonic() - started > 20:
+        elapsed = time.monotonic() - started
+        if launcher and launcher_seen is None:
+            launcher_seen = time.monotonic()
+        if not launcher:
+            launcher_seen = None
+        if elapsed > 20:
+            status.configure(text='Still starting Bytecek TV... Please leave the power on.')
+        if launcher_seen is not None and time.monotonic() - launcher_seen > 1.2:
             booting = False
             root.withdraw()
             splash.destroy()
+            status.destroy()
             root.geometry(f'160x44+{root.winfo_screenwidth()-184}+24')
             button.pack(fill='both', expand=True)
         root.after(300, poll)
