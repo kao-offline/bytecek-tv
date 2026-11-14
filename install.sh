@@ -55,6 +55,8 @@ install -d -m 755 /opt/bytecek/desktop /usr/share/themes/Bytecek/openbox-3
 install -m 644 "$SCRIPT_DIR"/desktop/wallpaper.svg "$SCRIPT_DIR"/desktop/apply-theme.py "$SCRIPT_DIR"/desktop/curtain.py /opt/bytecek/desktop/
 install -m 644 "$SCRIPT_DIR"/desktop/openbox-3/* /usr/share/themes/Bytecek/openbox-3/
 runuser -u tvbox -- python3 /opt/bytecek/desktop/apply-theme.py
+# Trusted desktop entry: no 'do you want to run it?' prompt on the Bytecek TV icon.
+runuser -u tvbox -- dbus-run-session gio set /home/tvbox/Desktop/bytecek-launcher.desktop metadata::trust true 2>/dev/null || true
 install -m 644 "$SCRIPT_DIR/server.py" "$SCRIPT_DIR/window_state.py" "$SCRIPT_DIR/service_mode.py" /opt/bytecek/
 install -m 755 "$SCRIPT_DIR/show-launcher.sh" /opt/bytecek/
 install -d -m 755 /usr/local/share/applications

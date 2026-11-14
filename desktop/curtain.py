@@ -47,23 +47,40 @@ def ease(t):
 def main():
     delay = int(sys.argv[1]) if len(sys.argv) > 1 else 600
     root = tk.Tk()
-    root.overrideredirect(True)
+    root.withdraw()
     w, h = root.winfo_screenwidth(), root.winfo_screenheight()
-    root.geometry(f'{w}x{h}+0+0')
-    root.configure(bg='#2c070c', cursor='none')
-    canvas = tk.Canvas(root, width=w, height=h, bg='#2c070c', highlightthickness=0, bd=0)
-    canvas.pack()
     half = w // 2 + 10
-    left_img, right_img = curtain_half(half, h, False), curtain_half(half, h, True)
-    left = canvas.create_image(0, 0, image=left_img, anchor='nw')
-    right = canvas.create_image(w - half, 0, image=right_img, anchor='nw')
+
+    # No compositor here, so the halves are separate windows that slide off-screen
+    # and the real desktop shows through the opening gap.
+    def panel(x, mirror):
+        win = tk.Toplevel(root)
+        win.overrideredirect(True)
+        win.geometry(f'{half}x{h}+{x}+0')
+        win.configure(bg='#2c070c', cursor='none')
+        canvas = tk.Canvas(win, width=half, height=h, highlightthickness=0, bd=0, bg='#2c070c')
+        canvas.pack()
+        img = curtain_half(half, h, mirror)
+        canvas.create_image(0, 0, image=img, anchor='nw')
+        canvas.image = img
+        win.attributes('-topmost', True)
+        return win
+
+    left, right = panel(0, False), panel(w - half, True)
+    logo = None
     try:
         logo_img = tk.PhotoImage(file='/opt/bytecek/boot/b.png')
-        logo = canvas.create_image(w // 2, h // 2, image=logo_img)
+        lw, lh = logo_img.width(), logo_img.height()
+        logo = tk.Toplevel(root)
+        logo.overrideredirect(True)
+        logo.geometry(f'{lw}x{lh}+{(w - lw) // 2}+{(h - lh) // 2}')
+        lc = tk.Canvas(logo, width=lw, height=lh, highlightthickness=0, bd=0, bg='#320a0f')
+        lc.pack()
+        lc.create_image(0, 0, image=logo_img, anchor='nw')
+        lc.image = logo_img
+        logo.attributes('-topmost', True)
     except tk.TclError:
-        logo = None
-    root.attributes('-topmost', True)
-    root.lift()
+        pass
     root.update()
 
     duration = 1.05
@@ -74,10 +91,10 @@ def main():
             start[0] = time.monotonic()
         t = min(1.0, (time.monotonic() - start[0]) / duration)
         offset = int(half * 1.02 * ease(t))
-        canvas.coords(left, -offset, 0)
-        canvas.coords(right, w - half + offset, 0)
-        if logo is not None and t > .12:
-            canvas.itemconfigure(logo, state='hidden')
+        left.geometry(f'+{-offset}+0')
+        right.geometry(f'+{w - half + offset}+0')
+        if logo is not None and t > .1:
+            logo.withdraw()
         if t < 1:
             root.after(8, frame)
         else:
