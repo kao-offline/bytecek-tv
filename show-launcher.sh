@@ -7,4 +7,4 @@ if [[ -n "$LAUNCHER" ]]; then
 fi
 BROWSER="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || true)"
 [[ -n "$BROWSER" ]] || exit 1
-"$BROWSER" --user-data-dir="$HOME/.config/bytecek-launcher" --password-store=basic --force-dark-mode --use-gl=angle --use-angle=gl --enable-gpu-rasterization --ignore-gpu-blocklist --no-first-run --no-default-browser-check --disable-session-crashed-bubble --kiosk http://127.0.0.1:8765/ >/tmp/bytecek-browser.log 2>&1 &
+"$BROWSER" --user-data-dir="$HOME/.config/bytecek-launcher" --password-store=basic --force-dark-mode --no-first-run --no-default-browser-check --disable-session-crashed-bubble --kiosk http://127.0.0.1:8765/ >/tmp/bytecek-browser.log 2>&1 &
