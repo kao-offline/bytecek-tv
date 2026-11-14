@@ -137,7 +137,7 @@ def preload(key,cmd):
             return False
         before=set(windows())
         subprocess.Popen(cmd,stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,start_new_session=True)
-        for _ in range(200):
+        for _ in range(600):  # a cold start at boot can take a while
             fresh=[w for w in windows() if w not in before and browser(w)]
             if fresh:
                 window=fresh[-1]
@@ -153,5 +153,5 @@ def preload(key,cmd):
                 if home:
                     subprocess.run(['xdotool','windowactivate',home[-1]],check=False,timeout=3)
                 return True
-            time.sleep(.05)
+            time.sleep(.1)
         return False
