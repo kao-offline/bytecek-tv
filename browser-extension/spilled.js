@@ -51,7 +51,7 @@
     for (const state of states()) {
       for (const show of state.shows) {
         const eps = (show.episodes || []).filter((e) => e && typeof e.id === 'string').sort(order);
-        let inProgress = false;
+        let inProgress = null;
         let lastDone = -1;
         let lastDoneAt = 0;
         eps.forEach((ep, i) => {
@@ -62,11 +62,12 @@
             const at = num(ep.playbackUpdatedAt);
             if (at >= lastDoneAt) { lastDoneAt = at; lastDone = i; }
           } else if (pos >= 60) {
-            inProgress = true;
             const item = entry(show, ep);
-            if (!byId.has(item.id) || byId.get(item.id).updatedAt < item.updatedAt) byId.set(item.id, item);
+            if (!inProgress || inProgress.updatedAt <= item.updatedAt) inProgress = item;
           }
         });
+        // One card per show: the episode watched most recently.
+        if (inProgress) byId.set(inProgress.id, inProgress);
         // Finished an episode recently: offer the next one.
         const next = eps[lastDone + 1];
         if (!inProgress && lastDone >= 0 && lastDoneAt && next && !num(next.playbackPositionSeconds)) {
