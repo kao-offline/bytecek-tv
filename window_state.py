@@ -127,3 +127,26 @@ def launch(key,cmd,normal=False):
                 return False
             time.sleep(.1)
         return False
+
+def preload(key,cmd):
+    """Start an app window in the background (minimized) unless it is already open."""
+    with LOCK:
+        entry=load().get(key,{})
+        window=entry.get('window')
+        if window in windows() and browser(window):
+            return False
+        before=set(windows())
+        subprocess.Popen(cmd,stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,start_new_session=True)
+        for _ in range(200):
+            fresh=[w for w in windows() if w not in before and browser(w)]
+            if fresh:
+                window=fresh[-1]
+                subprocess.run(['xdotool','windowminimize',window],check=False,timeout=3)
+                remember(key,window)
+                # Give focus back to Home if it is already on screen.
+                home=output('xdotool','search','--name','^Bytecek Launcher( - .*)?$').split()
+                if home:
+                    subprocess.run(['xdotool','windowactivate',home[-1]],check=False,timeout=3)
+                return True
+            time.sleep(.05)
+        return False

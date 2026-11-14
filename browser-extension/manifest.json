@@ -1,14 +1,14 @@
 {
   "manifest_version": 3,
   "name": "Bytecek TV comfort",
-  "version": "1.1.2",
-  "description": "Dark loading canvas, reduced motion and Spilled continue-watching for the TV launcher.",
+  "version": "1.2.0",
+  "description": "Curtain intro, dark loading canvas, reduced motion and Spilled continue-watching for the TV launcher.",
   "host_permissions": ["http://127.0.0.1:8765/*"],
   "background": {"service_worker": "background.js"},
   "content_scripts": [
     {
       "matches": ["http://*/*", "https://*/*"],
-      "js": ["comfort.js"],
+      "js": ["comfort.js", "intro.js"],
       "run_at": "document_start"
     },
     {

@@ -1,0 +1,67 @@
+// Velvet curtain intro for Bytecek app windows: opens when the app first appears and
+// every time it comes back from Home. Normal browser windows (Chrome tile) are left alone.
+(() => {
+  if (window.top !== window) return;
+  if (window.toolbar && window.toolbar.visible) return;
+  const LOGO = `<svg width="58" height="69" viewBox="0 0 58 69" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M32.6554 67.1364L29.0375 65.2867L24.606 67.1364H22.5866L18.1551 68.0914L15.9674 67.1364L13.1066 62.6502L14.5748 59.2864L16.3601 56.6481L14.5748 51.4873L13.1066 48.1216L14.5748 44.5877L13.6114 42.8781L14.5748 39.8196L15.9674 37.0348L14.5748 33.3316L13.6114 31.1249L14.5748 29.4421V26.8436H16.8649L21.5208 25.6837L22.5866 26.8436L24.606 27.8153L25.3914 26.8436L26.7937 25.291L27.6912 26.8436L31.7301 27.8153L34.9967 27.0802C35.9178 27.2105 36.7769 27.3945 37.574 27.6323L39.4712 29.4421L42.0794 30.0232L44.1452 30.564L43.9609 32.3641L42.949 34.098L44.9296 35.059L45.866 38.249L44.7019 39.8196L43.5549 40.1001L43.9609 41.4723C43.6677 41.9652 43.3304 42.4212 42.949 42.8402H41.4892V44.1175C40.8699 44.5496 40.1972 44.9105 39.4712 45.2002V46.4325H42.949L43.4042 48.1216V49.0192H45.866L47.0355 51.4873C47.0836 51.9931 47.0419 52.5432 46.9725 53.1123L47.5488 55.5823L45.866 57.7139V62.0893L43.5549 64.5014L41.4892 66.1842L37.0403 66.0816C35.5721 66.6745 34.0293 67.1364 32.6554 67.1364ZM30.3339 59.2864H24.3136V49.6853H30.511C31.757 49.6853 32.8259 49.8952 33.7178 50.3149C34.6097 50.7215 35.2983 51.3052 35.7836 52.0659C36.2689 52.8135 36.5116 53.7054 36.5116 54.7416C36.5116 56.1713 36.0066 57.2861 34.9967 58.0862C33.9998 58.8863 32.4456 59.2864 30.3339 59.2864ZM29.7043 43.4093H24.3136V34.5756H29.8617C31.4881 34.5756 32.78 34.9625 33.7375 35.7363C34.695 36.5102 35.1737 37.5726 35.1737 38.9236C35.1737 39.8679 34.9376 40.6746 34.4655 41.3435C34.0064 42.0124 33.3637 42.5239 32.5374 42.8781C31.7111 43.2322 30.7667 43.4093 29.7043 43.4093Z" fill-rule="evenodd" clip-rule="evenodd" fill="#E12929"/> <path d="M8.33459 31.5754L14.9061 23.5611L16.6692 19.8748L23.0804 15.8677L27.0875 7.85371L32.0562 6.41118V10.4182L36.8646 15.8677L40.2305 21.3173L43.5964 25.0038L46.6417 32.6972L54.3352 37.0248L57.3806 31.5754L50.4885 23.5611L49.5268 15.8677L39.4291 10.4182L37.8263 3.84669L30.4534 0L22.1188 4.80825L16.6692 12.1814L7.05236 15.8677L4.32758 23.5611L0 31.5754L4.32758 35.1014L8.33459 31.5754Z" fill="#E12929"/> </svg>`;
+  const host = document.createElement('bytecek-curtain');
+  const root = host.attachShadow({mode: 'closed'});
+  root.innerHTML = `<style>
+    :host{all:initial;position:fixed;inset:0;z-index:2147483647;pointer-events:none;display:block}
+    :host([hidden]){display:none}
+    .half{position:absolute;top:0;bottom:0;width:50.5%;will-change:transform;backface-visibility:hidden;
+      background:linear-gradient(180deg,rgba(0,0,0,.5) 0%,transparent 18%,transparent 82%,rgba(0,0,0,.45) 100%),
+      linear-gradient(90deg,#2c070c 0%,#6a1520 5%,#3a0910 9%,#7a1a25 15%,#450b13 19%,#5e121c 24%,#2f080d 28%,#741823 35%,#4a0c14 40%,#6b1621 46%,#320a0f 50%,#701723 57%,#420b12 62%,#7c1b26 69%,#3b0a11 74%,#62131d 80%,#2e070c 85%,#731822 92%,#3d0a11 100%);
+      transition:transform 1.05s cubic-bezier(.72,0,.18,1)}
+    .l{left:0;box-shadow:inset -30px 0 40px -20px rgba(0,0,0,.7)}
+    .r{right:0;transform:scaleX(-1);box-shadow:inset -30px 0 40px -20px rgba(0,0,0,.7)}
+    .logo{position:absolute;left:50%;top:50%;width:clamp(96px,9vw,160px);transform:translate(-50%,-50%);transition:opacity .3s ease;
+      filter:drop-shadow(0 0 3px rgba(20,4,6,.95)) drop-shadow(0 10px 30px rgba(10,2,3,.9))}
+    .logo svg{width:100%;height:auto;display:block}
+    .open .l{transform:translateX(-102%)}
+    .open .r{transform:translateX(102%) scaleX(-1)}
+    .open .logo{opacity:0}
+    .instant .half,.instant .logo{transition:none}
+  </style><div class="wrap"><div class="half l"></div><div class="half r"></div><div class="logo">${LOGO}</div></div>`;
+  const wrap = root.querySelector('.wrap');
+  let hideTimer;
+  const frames = (fn) => requestAnimationFrame(() => requestAnimationFrame(fn));
+
+  function close() {
+    clearTimeout(hideTimer);
+    host.hidden = false;
+    wrap.classList.add('instant');
+    wrap.classList.remove('open');
+    void wrap.offsetWidth;
+    wrap.classList.remove('instant');
+  }
+  function open(delay) {
+    setTimeout(() => frames(() => {
+      wrap.classList.add('open');
+      hideTimer = setTimeout(() => { host.hidden = true; }, 1150);
+    }), delay);
+  }
+  function attach() {
+    if (!document.documentElement) return false;
+    document.documentElement.append(host);
+    return true;
+  }
+
+  // First appearance: closed until the page has loaded (at most a few seconds).
+  if (!attach()) {
+    const mo = new MutationObserver(() => { if (attach()) mo.disconnect(); });
+    mo.observe(document, {childList: true, subtree: true});
+  }
+  let first = true;
+  const firstOpen = () => { if (first) { first = false; open(250); } };
+  window.addEventListener('load', firstOpen, {once: true});
+  setTimeout(firstOpen, 4000);
+  // Keep the curtain last in the document so sites cannot stack above it.
+  document.addEventListener('DOMContentLoaded', () => { if (host.parentNode !== document.documentElement || host.nextSibling) document.documentElement.append(host); }, {once: true});
+
+  // Sent to the background by Home: draw the curtain closed while hidden, open it on return.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') close();
+    else if (!first) open(120);
+  });
+})();

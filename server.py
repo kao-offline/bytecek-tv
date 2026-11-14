@@ -71,6 +71,24 @@ def spilled_episode(url):
     return f'{parts.scheme}://{parts.hostname}' == SPILLED_ORIGIN and parts.path.startswith('/library/watch/')
 
 
+def site_command(url, mode):
+    cmd = [BROWSER,'--user-data-dir='+str(Path.home()/'.config/bytecek-sites'),'--password-store=basic','--use-gl=angle','--use-angle=gl','--enable-native-gpu-memory-buffers','--enable-zero-copy','--enable-features=AcceleratedVideoDecodeLinuxGL,AcceleratedVideoDecodeLinuxZeroCopyGL','--force-dark-mode','--force-prefers-reduced-motion=reduce','--load-extension=/opt/bytecek/browser-extension','--no-first-run','--no-default-browser-check','--disable-session-crashed-bubble']
+    if mode == 'app':
+        return cmd + [f'--app={url}']
+    return cmd + ['--new-window','--start-maximized','chrome://newtab/']
+
+
+def preload_apps():
+    """Open Spilled minimized at startup so the first visit is instant.
+    CT24 is not preloaded: its live stream autoplays with sound."""
+    if not BROWSER:
+        return
+    try:
+        window_state.preload('app|'+SPILLED_HOME, site_command(SPILLED_HOME, 'app'))
+    except Exception as error:  # never let preloading take the launcher down
+        print('[Bytecek] preload failed:', error, flush=True)
+
+
 def valid_web_url(value):
     if not isinstance(value, str) or len(value) > 2048:
         return False
@@ -194,7 +212,7 @@ class Handler(BaseHTTPRequestHandler):
             if not BROWSER:
                 self.reply_json(500,{'error':'Chromium/Chrome is missing'})
                 return
-            cmd = [BROWSER,'--user-data-dir='+str(Path.home()/'.config/bytecek-sites'),'--password-store=basic','--use-gl=angle','--use-angle=gl','--enable-native-gpu-memory-buffers','--enable-zero-copy','--enable-features=AcceleratedVideoDecodeLinuxGL,AcceleratedVideoDecodeLinuxZeroCopyGL','--force-dark-mode','--force-prefers-reduced-motion=reduce','--load-extension=/opt/bytecek/browser-extension','--no-first-run','--no-default-browser-check','--disable-session-crashed-bubble']
+            cmd = site_command(url, mode)
             key = mode+'|'+url
             episode = mode == 'app' and spilled_episode(url)
             if episode:
@@ -202,10 +220,6 @@ class Handler(BaseHTTPRequestHandler):
                 key = 'app|'+SPILLED_HOME
                 with PENDING_LOCK:
                     PENDING.update(url=url, at=time.time())
-            if mode == 'app':
-                cmd += [f'--app={url}']
-            else:
-                cmd += ['--new-window','--start-maximized','chrome://newtab/']
             try:
                 reused = window_state.launch(key,cmd,normal=mode=='browser')
                 if episode and not reused:
@@ -244,6 +258,7 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     print(f'Bytecek server listening on http://{HOST}:{PORT}',flush=True)
     httpd = ThreadingHTTPServer((HOST,PORT),Handler)
+    threading.Thread(target=preload_apps,daemon=True).start()
     httpd.serve_forever(poll_interval=.3)
 
 if __name__ == '__main__':
