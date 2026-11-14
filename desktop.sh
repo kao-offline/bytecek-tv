@@ -11,7 +11,7 @@ case "${1:-}" in
     use_wm_config /etc/xdg/openbox/rc.xml
     pgrep -u "$(id -u)" -x lxqt-panel >/dev/null && exit 0
     export XDG_CURRENT_DESKTOP=LXQt XDG_MENU_PREFIX=lxqt- QT_QPA_PLATFORMTHEME=lxqt
-    setsid pcmanfm-qt --desktop >>/tmp/bytecek-desktop.log 2>&1 </dev/null &
+    setsid pcmanfm-qt --desktop --profile=lxqt >>/tmp/bytecek-desktop.log 2>&1 </dev/null &
     setsid lxqt-panel >>/tmp/bytecek-desktop.log 2>&1 </dev/null &
     ;;
   off)
