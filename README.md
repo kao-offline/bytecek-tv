@@ -10,8 +10,8 @@ A light custom HDMI TV launcher for **Debian 13 amd64**, styled after the suppli
 - Chrome tile → opens your installed **Google Chrome if present**, otherwise Debian Chromium.
 - Add Shortcut (+) → enter a name and web URL; shortcuts persist in Chromium local storage.
 - Red button → shutdown / restart / sleep, with an `u sure` confirmation dialog.
-- `exit >` → closes the launcher and opens an X terminal.
-- **F9** from a video/site window → closes the foreground browser window and returns to the launcher. Arrow keys, Tab and Enter work in the UI.
+- `exit >`: hides Home and reveals the desktop launcher button.
+- **F9**: hides the active app and returns Home. Its tile restores the same live window.
 - Custom shortcut: focus and press **Delete** to remove it, or right-click it.
 
 ## Installation: download bundle
@@ -111,8 +111,8 @@ If returning to an existing desktop installation, restore `graphical.target`
 with `sudo systemctl set-default graphical.target` after uninstalling.
 
 Launcher and websites use separate browser profiles so closing a website with
-F9 leaves Home alive. Websites open fullscreen without window decorations;
-Chrome opens a separate fullscreen browser window. A short Opening overlay
+F9 leaves Home alive. Websites open fullscreen;
+Chrome opens a separate maximized browser window with tabs, address bar and window controls. A short Opening overlay
 acknowledges launch requests; it is not a website loading progress indicator.
 Saved custom shortcuts stay in the launcher's profile across reinstalls.
 Existing shortcuts from the original release's default Chromium profile must be
@@ -137,8 +137,8 @@ dark B cover bridges X startup. Both browser profiles prefer dark UI and reduced
 motion. Website windows use the same password-store backend as the launcher so
 an unavailable desktop keyring cannot silently block first launch.
 
-A small native **Home ? F9** button appears at the top right of website windows.
-Click it or press F9 to close the active site window and focus the launcher. The
+A small native **Home | F9** control expands from a top-right pill in fullscreen apps.
+Hover over or click the small top-right pill to reveal Home, or press F9. Home minimizes the site window and focuses the launcher; its tile restores the same live page. The
 control stays outside website content and does not occupy the top-left back
 navigation area. It disappears on the launcher.
 
@@ -162,3 +162,33 @@ The target notebook has also recorded interrupted early boots before the
 launcher starts. Their cause is not established; working launcher tests do not
 prove unattended boot reliability. Diagnostics are retained on that machine at
 `/root/bytecek-boot-diagnostics/`, with frequent journal syncing enabled.
+
+## Desktop, app resume and playback
+
+Exiting Home now minimizes it and reveals **Open Bytecek TV** on the minimal
+desktop. Click that button to restore it. A `Bytecek TV` desktop entry is also
+installed under `/usr/local/share/applications` and the TV user's Desktop.
+
+Home/F9 minimizes a site instead of closing it. Selecting its tile restores the
+same window, including its current navigation and video position. Chrome opens
+as a regular maximized browser with tabs and an address bar. Explicitly closing
+a window with the browser's own close button still closes it. Live page state
+is retained while the browser remains running; this is not a promise to retain
+live playback state through reboot. Hidden tabs may continue audio playback.
+
+The fullscreen control rests as a small pill at the top right. Hover/click to
+expand Home; moving away collapses it. It is absent from regular Chrome windows,
+where F9 remains available. User cookies and local storage stay in the existing
+`~/.config/bytecek-sites` browser profile.
+
+On Debian/Intel systems requiring full video processing, install the official
+`intel-media-va-driver-non-free` package with Debian's `non-free` component
+enabled. Driver capability alone does not prove browser decoding is accelerated;
+verify the active decoder using Chromium's Media diagnostics.
+
+The notebook's full Intel media driver and OpenGL/zero-copy browser settings were
+verified with synthetic 1080p H.264 playback: Chromium selected
+`VaapiVideoDecoder` and reported `kIsPlatformVideoDecoder=true`. This confirms
+the tested codec/path, not hardware support for every stream or codec. The
+Broadwell GPU does not provide modern AV1 hardware decoding. Full-feature driver
+reference: https://github.com/intel/media-driver

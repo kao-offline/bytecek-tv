@@ -3,6 +3,7 @@
 import importlib.util
 import http.client
 import json
+import sys
 import threading
 import unittest
 from http.server import ThreadingHTTPServer
@@ -10,6 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT))
 spec=importlib.util.spec_from_file_location('bytecekserver',ROOT/'server.py')
 server=importlib.util.module_from_spec(spec);spec.loader.exec_module(server)
 
@@ -49,11 +51,19 @@ class LauncherServerTest(unittest.TestCase):
             self.assertEqual(status,400)
 
     def test_launch(self):
-        with patch.object(server.subprocess,'Popen') as popen, patch.object(server,'BROWSER','/usr/bin/chromium'):
+        with patch.object(server.window_state,'launch') as popen, patch.object(server,'BROWSER','/usr/bin/chromium'):
             status,data=self.call('POST','/api/launch',{'url':'https://spilled.kaooffline.top/','mode':'app'})
             self.assertEqual((status,data['ok']),(200,True))
-            self.assertIn('--app=https://spilled.kaooffline.top/',popen.call_args[0][0])
-            self.assertTrue(any('bytecek-sites' in arg for arg in popen.call_args[0][0]))
+            self.assertIn('--app=https://spilled.kaooffline.top/',popen.call_args[0][1])
+            self.assertTrue(any('bytecek-sites' in arg for arg in popen.call_args[0][1]))
+
+    def test_chrome_is_normal_window(self):
+        with patch.object(server.window_state,'launch') as launch, patch.object(server,'BROWSER','/usr/bin/chromium'):
+            status,_=self.call('POST','/api/launch',{'url':'https://www.google.com/','mode':'browser'})
+            self.assertEqual(status,200)
+            self.assertNotIn('--start-fullscreen',launch.call_args[0][1])
+            self.assertIn('--start-maximized',launch.call_args[0][1])
+            self.assertTrue(launch.call_args.kwargs['normal'])
 
     def test_brand_assets(self):
         for path, mime in (('/icons/spilled.png','image/png'),('/icons/ct24.svg','image/svg+xml'),('/icons/chrome.svg','image/svg+xml')):

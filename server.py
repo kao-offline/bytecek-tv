@@ -10,6 +10,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
+import window_state
 
 HOST = '127.0.0.1'
 PORT = 8765
@@ -91,13 +92,13 @@ class Handler(BaseHTTPRequestHandler):
             if not BROWSER:
                 self.reply_json(500,{'error':'Chromium/Chrome is missing'})
                 return
-            cmd = [BROWSER,'--user-data-dir='+str(Path.home()/'.config/bytecek-sites'),'--password-store=basic','--force-dark-mode','--force-prefers-reduced-motion=reduce','--load-extension=/opt/bytecek/browser-extension','--no-first-run','--no-default-browser-check','--disable-session-crashed-bubble']
+            cmd = [BROWSER,'--user-data-dir='+str(Path.home()/'.config/bytecek-sites'),'--password-store=basic','--use-gl=angle','--use-angle=gl','--enable-native-gpu-memory-buffers','--enable-zero-copy','--enable-features=AcceleratedVideoDecodeLinuxGL,AcceleratedVideoDecodeLinuxZeroCopyGL','--force-dark-mode','--force-prefers-reduced-motion=reduce','--load-extension=/opt/bytecek/browser-extension','--no-first-run','--no-default-browser-check','--disable-session-crashed-bubble']
             if mode == 'app':
                 cmd += [f'--app={url}','--start-fullscreen']
             else:
-                cmd += ['--new-window','--start-fullscreen',url]
+                cmd += ['--new-window','--start-maximized',url]
             try:
-                subprocess.Popen(cmd,stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,start_new_session=True)
+                window_state.launch(mode+'|'+url,cmd,normal=mode=='browser')
             except OSError as error:
                 self.reply_json(500,{'error':str(error)})
                 return
@@ -122,7 +123,7 @@ class Handler(BaseHTTPRequestHandler):
             # Give browser time to receive the response before closing it.
             def exit_launcher():
                 time.sleep(.3)
-                subprocess.run(['xdotool','search','--name','Bytecek Launcher','windowclose'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,check=False)
+                subprocess.run(['xdotool','search','--name','Bytecek Launcher','windowminimize'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,check=False)
             threading.Thread(target=exit_launcher,daemon=True).start()
             return
         self.reply_json(404,{'error':'Unknown action'})

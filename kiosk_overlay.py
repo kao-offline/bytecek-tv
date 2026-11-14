@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Native Home control outside web content; short dark cover during X startup."""
+"""Desktop launcher button and an unobtrusive fullscreen Home pill."""
 import subprocess
 import time
 import tkinter as tk
@@ -7,73 +7,110 @@ import tkinter as tk
 
 def output(*args):
     try:
-        return subprocess.check_output(args, stderr=subprocess.DEVNULL, timeout=1).decode().strip()
-    except (OSError, subprocess.SubprocessError):
+        return subprocess.check_output(args,stderr=subprocess.DEVNULL,timeout=1).decode().strip()
+    except (OSError,subprocess.SubprocessError):
         return ''
 
-root = tk.Tk()
+root=tk.Tk()
 root.title('Bytecek Home Control')
-root.configure(bg='#242424')
 root.overrideredirect(True)
-root.attributes('-topmost', True)
+root.configure(bg='#242424')
+root.attributes('-topmost',True)
 root.geometry(f'{root.winfo_screenwidth()}x{root.winfo_screenheight()}+0+0')
-logo = tk.PhotoImage(file='/opt/bytecek/boot/b.png')
-splash = tk.Label(root, image=logo, bg='#242424')
-splash.place(relx=.5, rely=.46, anchor='center')
-status = tk.Label(root, text='Starting Bytecek TV...', font=('DejaVu Sans', 16),
-                  bg='#242424', fg='#eeeeee')
-status.place(relx=.5, rely=.64, anchor='center')
-started = time.monotonic()
-last_site = ''
-booting = True
-launcher_seen = None
+logo=tk.PhotoImage(file='/opt/bytecek/boot/b.png')
+small=logo.subsample(3,3)
+tk.Label(root,image=logo,bg='#242424').place(relx=.5,rely=.46,anchor='center')
+status=tk.Label(root,text='Starting Bytecek TV...',font=('DejaVu Sans',16),bg='#242424',fg='white')
+status.place(relx=.5,rely=.64,anchor='center')
+started=time.monotonic()
+mode='boot'
+last_site=''
+last_hover=0
 
 
 def home():
-    global last_site
-    subprocess.Popen(['/opt/bytecek/home.sh', last_site], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.Popen(['/opt/bytecek/home.sh',last_site],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
     root.withdraw()
 
 
-button = tk.Button(root, text='Home  |  F9', command=home, bg='#303030', fg='white',
-                   activebackground='#b82020', activeforeground='white',
-                   font=('DejaVu Sans', 13), relief='flat', borderwidth=0, cursor='hand2')
+def show_launcher():
+    subprocess.Popen(['/opt/bytecek/show-launcher.sh'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+    root.withdraw()
+
+
+def set_mode(value):
+    global mode
+    if mode==value:
+        if value!='hidden':root.deiconify()
+        return
+    mode=value
+    for child in root.winfo_children():child.destroy()
+    if value=='hidden':
+        root.withdraw()
+        return
+    root.attributes('-topmost',value!='desktop')
+    root.attributes('-alpha',1 if value=='desktop' else .9)
+    right=root.winfo_screenwidth()-24
+    if value=='desktop':
+        root.geometry(f'300x150+{root.winfo_screenwidth()//2-150}+{root.winfo_screenheight()//2-75}')
+        tk.Button(root,text='Open Bytecek TV',image=small,compound='top',command=show_launcher,
+                  bg='#303030',fg='white',activebackground='#923030',activeforeground='white',
+                  font=('DejaVu Sans',18),relief='flat',cursor='hand2').pack(fill='both',expand=True)
+    elif value=='pill':
+        root.geometry(f'46x14+{right-46}+16')
+        canvas=tk.Canvas(root,bg='#242424',highlightthickness=0,cursor='hand2')
+        canvas.pack(fill='both',expand=True)
+        canvas.create_line(9,7,37,7,fill='#db5555',width=7,capstyle='round')
+        canvas.bind('<Enter>',expand)
+        canvas.bind('<Button-1>',expand)
+    elif value=='expanded':
+        root.geometry(f'160x44+{right-160}+16')
+        button=tk.Button(root,text='Home  |  F9',command=home,bg='#303030',fg='white',
+                         activebackground='#b82020',activeforeground='white',font=('DejaVu Sans',13),
+                         borderwidth=0,relief='flat',cursor='hand2')
+        button.pack(fill='both',expand=True)
+        button.bind('<Motion>',hover)
+    root.deiconify()
+    if value!='desktop':root.lift()
+
+
+def hover(event=None):
+    global last_hover
+    last_hover=time.monotonic()
+
+
+def expand(event=None):
+    hover()
+    set_mode('expanded')
 
 
 def poll():
-    global booting, last_site, launcher_seen
-    if booting:
-        launcher = output('xdotool', 'search', '--onlyvisible', '--name', '^Bytecek Launcher( - .*)?$')
-        elapsed = time.monotonic() - started
-        if launcher and launcher_seen is None:
-            launcher_seen = time.monotonic()
-        if not launcher:
-            launcher_seen = None
-        if elapsed > 20:
+    global last_site
+    active=output('xdotool','getactivewindow')
+    name=output('xdotool','getwindowname',active) if active else ''
+    if mode=='boot':
+        if output('xdotool','search','--onlyvisible','--name','^Bytecek Launcher( - .*)?$'):
+            set_mode('hidden')
+        elif time.monotonic()-started>20:
             status.configure(text='Still starting Bytecek TV... Please leave the power on.')
-        if launcher_seen is not None and time.monotonic() - launcher_seen > 1.2:
-            booting = False
-            root.withdraw()
-            splash.destroy()
-            status.destroy()
-            root.geometry(f'160x44+{root.winfo_screenwidth()-184}+24')
-            button.pack(fill='both', expand=True)
-        root.after(300, poll)
+        root.after(500,poll)
         return
-    active = output('xdotool', 'getactivewindow')
-    name = output('xdotool', 'getwindowname', active) if active else ''
-    if name == 'Bytecek Home Control':
-        root.after(750, poll)
-        return
-    cls = output('xprop', '-id', active, 'WM_CLASS').lower() if active else ''
-    if ('chromium' in cls or 'chrome' in cls) and not name.startswith('Bytecek Launcher'):
-        last_site = active
-        root.deiconify()
-        root.lift()
-    else:
-        root.withdraw()
-    root.after(750, poll)
+    if name!='Bytecek Home Control':
+        cls=output('xprop','-id',active,'WM_CLASS').lower() if active else ''
+        if name.startswith('Bytecek Launcher'):
+            set_mode('hidden')
+        elif 'chrome' in cls or 'chromium' in cls:
+            last_site=active
+            fullscreen='_NET_WM_STATE_FULLSCREEN' in output('xprop','-id',active,'_NET_WM_STATE')
+            if fullscreen:
+                if mode not in ('pill','expanded'):set_mode('pill')
+            else:set_mode('hidden')
+        else:set_mode('desktop')
+    if mode=='expanded' and time.monotonic()-last_hover>1.8:
+        x,y=root.winfo_pointerxy()
+        if not(root.winfo_rootx()<=x<root.winfo_rootx()+root.winfo_width() and root.winfo_rooty()<=y<root.winfo_rooty()+root.winfo_height()):
+            set_mode('pill')
+    root.after(500,poll)
 
-
-root.after(100, poll)
+root.after(100,poll)
 root.mainloop()

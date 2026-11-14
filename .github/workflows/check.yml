@@ -14,6 +14,7 @@ jobs:
           python-version: '3.13'
       - run: for file in *.sh; do bash -n "$file"; done
       - run: python -m unittest discover -s tests -p 'test_server.py'
+      - run: python tests/test_windows.py
       - run: pip install -r requirements-dev.txt
       - run: python -m playwright install --with-deps chromium
       - run: python tests/test_ui.py

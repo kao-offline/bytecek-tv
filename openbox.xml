@@ -2,6 +2,6 @@
 <openbox_config xmlns="http://openbox.org/3.4/rc">
   <focus><focusNew>yes</focusNew><followMouse>no</followMouse></focus>
   <applications>
-    <application class="*"><decor>no</decor></application>
+    <application class="*"><decor>yes</decor></application>
   </applications>
 </openbox_config>

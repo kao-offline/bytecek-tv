@@ -56,10 +56,6 @@ if [[ -z "$BROWSER" ]]; then
   echo 'No Chrome/Chromium found';exec xterm
 fi
 
-# Launcher stays open in its own Chromium window. Sites open as separate windows.
-mkdir -p "$HOME/.config/bytecek-launcher"
-"$BROWSER" --user-data-dir="$HOME/.config/bytecek-launcher" --password-store=basic --force-dark-mode --force-prefers-reduced-motion=reduce --noerrdialogs --disable-infobars --no-first-run --no-default-browser-check --disable-session-crashed-bubble --kiosk 'http://127.0.0.1:8765/' || true
-
-# Exit launcher => minimal terminal rather than a blank/black screen.
-echo 'Bytecek launcher exited. Run: chromium --kiosk http://127.0.0.1:8765/'
-xterm -fa 'DejaVu Sans Mono' -fs 13 -title 'Bytecek terminal' || true
+# The WM owns the session lifetime. Exiting Home reveals the desktop button.
+/opt/bytecek/show-launcher.sh
+wait "$WM_PID"

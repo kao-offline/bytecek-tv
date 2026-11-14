@@ -12,23 +12,36 @@ printf 'WARNING: tty1 will log in without a password. Do not use on shared devic
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y --no-install-recommends \
-  xorg xinit openbox xbindkeys xdotool xterm x11-xserver-utils \
+  xorg xinit openbox xbindkeys xdotool wmctrl xterm x11-xserver-utils \
   chromium python3 python3-tk xdg-desktop-portal-gtk dbus-x11 ca-certificates curl unzip sudo fonts-dejavu-core \
   mesa-va-drivers vainfo alsa-utils unclutter plymouth plymouth-themes
 # PipeWire for HDMI audio when available (some base images may already include it).
 if apt-cache show pipewire-audio >/dev/null 2>&1;then apt-get install -y --no-install-recommends pipewire-audio wireplumber || true;fi
-if apt-cache show intel-media-va-driver >/dev/null 2>&1;then apt-get install -y --no-install-recommends intel-media-va-driver || true;fi
+if apt-cache show intel-media-va-driver-non-free >/dev/null 2>&1; then
+  apt-get install -y --no-install-recommends intel-media-va-driver-non-free
+elif apt-cache show intel-media-va-driver >/dev/null 2>&1; then
+  apt-get install -y --no-install-recommends intel-media-va-driver
+  echo 'For full Intel video processing, enable Debian non-free and install intel-media-va-driver-non-free.'
+fi
 
 if ! id -u tvbox >/dev/null 2>&1;then
   useradd --create-home --shell /bin/bash tvbox
 fi
+for group in render video; do
+  if getent group "$group" >/dev/null; then usermod -a -G "$group" tvbox; fi
+done
 install -d -m 755 /opt/bytecek /opt/bytecek/ui
 install -d -m 755 /opt/bytecek/boot /opt/bytecek/browser-extension
 install -m 644 "$SCRIPT_DIR"/boot/* /opt/bytecek/boot/
 install -m 644 "$SCRIPT_DIR"/browser-extension/* /opt/bytecek/browser-extension/
 install -m 644 "$SCRIPT_DIR/kiosk_overlay.py" /opt/bytecek/kiosk_overlay.py
 install -m 644 "$SCRIPT_DIR/openbox.xml" /opt/bytecek/openbox.xml
-install -m 644 "$SCRIPT_DIR/server.py" /opt/bytecek/server.py
+install -m 644 "$SCRIPT_DIR/server.py" "$SCRIPT_DIR/window_state.py" /opt/bytecek/
+install -m 755 "$SCRIPT_DIR/show-launcher.sh" /opt/bytecek/
+install -d -m 755 /usr/local/share/applications
+install -m 644 "$SCRIPT_DIR/bytecek-launcher.desktop" /usr/local/share/applications/
+install -d -o tvbox -g tvbox /home/tvbox/Desktop
+install -o tvbox -g tvbox -m 755 "$SCRIPT_DIR/bytecek-launcher.desktop" /home/tvbox/Desktop/
 install -m 644 "$SCRIPT_DIR/xbindkeysrc" /opt/bytecek/xbindkeysrc
 install -m 755 "$SCRIPT_DIR/login.sh" /opt/bytecek/login.sh
 install -m 755 "$SCRIPT_DIR/home.sh" /opt/bytecek/home.sh

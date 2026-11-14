@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Bytecek TV
+Comment=Open the TV launcher
+Exec=/opt/bytecek/show-launcher.sh
+Icon=/opt/bytecek/boot/b.png
+Terminal=false
+Categories=AudioVideo;
