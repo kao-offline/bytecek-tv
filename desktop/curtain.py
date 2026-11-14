@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""Fullscreen velvet curtain (same look as Home) that opens onto the desktop.
+"""Fullscreen velvet curtain (same look as Home) drawn above every window.
 
-curtain.py [delay_ms]  - appears closed at once, opens after delay_ms, then exits."""
+curtain.py open  DELAY_MS : closed at once, opens after DELAY_MS (onto an app or the desktop)
+curtain.py close HOLD_MS  : slides closed over the screen, stays HOLD_MS, then vanishes"""
+import os
 import sys
 import time
 import tkinter as tk
@@ -22,7 +24,13 @@ def colour(pct, shade):
 
 
 def curtain_half(width, height, mirror):
-    """Velvet folds across, darker toward the top and bottom edges (as on Home)."""
+    """Velvet folds across, darker toward the top and bottom edges (as on Home).
+    Rendered once per screen size and cached as PNG: drawing it in Python is slow."""
+    cache = os.path.join(os.path.expanduser('~/.cache/bytecek'), f'curtain-{width}x{height}-{"r" if mirror else "l"}.png')
+    try:
+        return tk.PhotoImage(file=cache)
+    except tk.TclError:
+        pass
     img = tk.PhotoImage(width=width, height=height)
     xs = list(range(width - 1, -1, -1)) if mirror else list(range(width))
     edge = int(height * .18)
@@ -36,6 +44,11 @@ def curtain_half(width, height, mirror):
         if y1 > y0:
             row = '{' + ' '.join(colour(x / (width - 1) * 100, shade) for x in xs) + '}'
             img.put(row, to=(0, y0, width, y1))
+    try:
+        os.makedirs(os.path.dirname(cache), exist_ok=True)
+        img.write(cache, format='png')
+    except (OSError, tk.TclError):
+        pass
     return img
 
 
@@ -59,14 +72,17 @@ def main():
 
     # No compositor here, so the halves are separate windows that slide on/off-screen
     # and whatever is behind shows through the gap.
+    images = {False: curtain_half(half, h, False), True: curtain_half(half, h, True)}
+
     def panel(x, mirror):
         win = tk.Toplevel(root)
+        win.withdraw()  # map only once drawn: no blank flash
         win.overrideredirect(True)
         win.geometry(f'{half}x{h}+{x}+0')
         win.configure(bg='#2c070c', cursor='none')
         canvas = tk.Canvas(win, width=half, height=h, highlightthickness=0, bd=0, bg='#2c070c')
         canvas.pack()
-        img = curtain_half(half, h, mirror)
+        img = images[mirror]
         canvas.create_image(0, 0, image=img, anchor='nw')
         canvas.image = img
         win.attributes('-topmost', True)
@@ -79,9 +95,11 @@ def main():
         logo_img = tk.PhotoImage(file='/opt/bytecek/boot/b.png')
         lw, lh = logo_img.width(), logo_img.height()
         logo = tk.Toplevel(root)
+        logo.withdraw()
         logo.overrideredirect(True)
         x0, y0 = (w - lw) // 2, (h - lh) // 2
-        logo.geometry(f'{lw}x{lh}+{x0}+{y0}')
+        # When closing, the B waits off-screen and moves in (no new window flashing up).
+        logo.geometry(f'{lw}x{lh}+{-lw - 50 if closing else x0}+{y0}')
         lc = tk.Canvas(logo, width=lw, height=lh, highlightthickness=0, bd=0, bg='#320a0f')
         lc.pack()
         # The curtain behind the logo, so its transparent edges blend in.
@@ -90,15 +108,16 @@ def main():
         lc.create_image(0, 0, image=logo_img, anchor='nw')
         lc.image = logo_img
         logo.attributes('-topmost', True)
-        if closing:
-            logo.withdraw()
     except tk.TclError:
         logo = None
+    root.update_idletasks()
+    for win in (left, right) + ((logo,) if logo is not None else ()):
+        win.deiconify()
     root.update()
 
     def on_top():
         # Raising an app or Home through the WM may stack it above us; stay in front.
-        for win in (left, right) + ((logo,) if logo is not None and logo.winfo_viewable() else ()):
+        for win in (left, right) + ((logo,) if logo is not None else ()):
             win.lift()
 
     on_top()
@@ -120,11 +139,10 @@ def main():
         left.geometry(f'+{-offset}+0')
         right.geometry(f'+{w - half + offset}+0')
         if logo is not None:
-            if closing and t > .9 and not logo.winfo_viewable():
-                logo.deiconify()
-                logo.lift()
+            if closing and t > .9:
+                logo.geometry(f'+{x0}+{y0}')
             elif not closing and t > .1:
-                logo.withdraw()
+                logo.geometry(f'+{-lw - 50}+{y0}')
         if t < 1:
             root.after(8, frame)
         elif closing:

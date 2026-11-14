@@ -230,8 +230,8 @@ class Handler(BaseHTTPRequestHandler):
                     PENDING.update(url=url, at=time.time())
             # Home's curtain has just closed: put the same curtain above everything, raise
             # the app behind it, then let it open onto the app.
-            curtain(['open','900'])
-            time.sleep(.45)
+            curtain(['open','650'])
+            time.sleep(.35)
             try:
                 reused = window_state.launch(key,cmd,normal=mode=='browser')
                 if episode and not reused:
