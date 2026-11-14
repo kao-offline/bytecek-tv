@@ -163,6 +163,8 @@ async function launch(name,url,mode){
   if(launching)return;launching=true;
   $('launch-label').textContent='Opening '+name;$('launching').hidden=false;
   closeCurtain();
+  // Let the curtain finish closing; the app then appears behind its own closed curtain.
+  if(!REDUCED)await new Promise(r=>setTimeout(r,850));
   const ok=await request('/api/launch',{url,mode});
   setTimeout(()=>{$('launching').hidden=true;launching=false},900);
   if(!ok){setTimeout(openCurtain,600);return}

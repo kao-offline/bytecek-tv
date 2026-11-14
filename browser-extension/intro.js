@@ -61,6 +61,11 @@
   // Keep the curtain last in the document so sites cannot stack above it.
   document.addEventListener('DOMContentLoaded', () => { if (host.parentNode !== document.documentElement || host.nextSibling) document.documentElement.append(host); }, {once: true});
 
+  // home.sh presses Ctrl+Alt+Shift+F12 right before minimizing, so the frame left on
+  // screen while hidden is the closed curtain (no flash of the old page on return).
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'F12' && e.ctrlKey && e.altKey && e.shiftKey) { e.preventDefault(); e.stopImmediatePropagation(); close(); }
+  }, true);
   // Sent to the background by Home: draw the curtain closed while hidden, open it on return.
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') close();

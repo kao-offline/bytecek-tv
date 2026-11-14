@@ -37,7 +37,7 @@ def repaint(window):
     # the mode functions below put it back.
     subprocess.run(['wmctrl','-ir',window,'-b','remove,fullscreen'],check=False,timeout=3)
     subprocess.run(['wmctrl','-ir',window,'-b','remove,maximized_vert,maximized_horz'],check=False,timeout=3)
-    time.sleep(.15)
+    time.sleep(.05)
 
 def load():
     try:

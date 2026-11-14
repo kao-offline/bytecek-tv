@@ -68,7 +68,7 @@ async def main():
         await page.locator('.tile').first.click()
         assert await page.locator('#launching').is_visible()
         assert await page.locator('#launch-label').inner_text()=='Opening Spilled'
-        await page.wait_for_timeout(1100)
+        await page.wait_for_timeout(2000)
         assert not await page.locator('#launching').is_visible()
         for width in (1920,1280,800,480):
             await page.set_viewport_size({'width':width,'height':1080})
@@ -82,7 +82,7 @@ async def main():
           };
         }""")
         await page.locator('.tile').first.click()
-        await page.wait_for_timeout(1100)
+        await page.wait_for_timeout(2000)
         assert await page.evaluate('authRetries')==['test-token','renewed-token']
         assert not errs,errs
         print('PASS UI: four default shortcuts; add shortcut; power menu; confirmation; exit; Escape; no page errors')
