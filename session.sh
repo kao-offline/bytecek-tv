@@ -11,6 +11,7 @@ systemctl --user reset-failed xdg-desktop-portal.service xdg-desktop-portal-gtk.
 xsetroot -solid "#242424"
 unclutter -idle 2 -root &
 CURSOR_PID=$!
+mkdir -p "$HOME/.config/bytecek" && cp -f /opt/bytecek/openbox-tv.xml "$HOME/.config/bytecek/openbox-active.xml" 2>/dev/null || true
 openbox --config-file /opt/bytecek/openbox.xml --sm-disable >/tmp/bytecek-openbox.log 2>&1 &
 WM_PID=$!
 python3 /opt/bytecek/kiosk_overlay.py >/tmp/bytecek-overlay.log 2>&1 &

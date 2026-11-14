@@ -129,11 +129,11 @@ let homeShown=null;
 const curtain=()=>$('curtain');
 function closeCurtain(){curtain().classList.add('closed','lit')}
 function openCurtain(){clearTimeout(curtainFallback);$('launching').hidden=true;curtain().classList.remove('closed','lit')}
-// While an app covers Home, reset the curtain to open without animating, so the return can play it.
-function resetCurtainOpen(){const c=curtain();c.classList.add('instant');openCurtain();void c.offsetWidth;c.classList.remove('instant')}
 function playReturn(){
   if(returning)return;returning=true;
-  if(!curtain().classList.contains('closed'))closeCurtain();
+  // Normally the curtain is still closed from the launch or exit: just open it.
+  if(curtain().classList.contains('closed')){setTimeout(()=>{openCurtain();returning=false},REDUCED?0:200);return}
+  closeCurtain();
   setTimeout(()=>{openCurtain();returning=false},REDUCED?0:1250);
 }
 // show-launcher.sh stamps the moment Home is brought back (F9, Menu, Home key).
@@ -169,8 +169,7 @@ async function launch(name,url,mode){
   setTimeout(()=>{$('launching').hidden=true;launching=false},900);
   if(!ok){setTimeout(openCurtain,600);return}
   // The app window normally covers the launcher; the curtain reopens when Home returns.
-  // The app now covers Home; reopen the curtain silently so the return can close and open it.
-  curtainFallback=setTimeout(resetCurtainOpen,1600);
+  // Stay closed behind the app; returning Home opens it.
 }
 function activateTile(index){const items=[...BASE,...shortcuts,{id:'add'}];const item=items[index];if(!item)return;if(item.id==='add'){openAdd();return}launch(item.name,item.url,item.mode||'app')}
 function activateResume(index){const item=resumeItems[index];if(item)launch(item.show,item.url,'app')}
@@ -182,7 +181,13 @@ $('power-toggle').addEventListener('click',()=>togglePower());
 $('exit').addEventListener('click',()=>openConfirm('exit'));
 $('power-panel').addEventListener('click',e=>{const btn=e.target.closest('[data-power]');if(btn)openConfirm(btn.dataset.power)});
 $('confirm-no').addEventListener('click',closeConfirm);
-$('confirm-yes').addEventListener('click',async()=>{const action=pendingAction;closeConfirm();if(action==='exit')await request('/api/exit',{});else await request('/api/power',{action})});
+$('confirm-yes').addEventListener('click',async()=>{
+  const action=pendingAction;closeConfirm();
+  if(action!=='exit'){await request('/api/power',{action});return}
+  closeCurtain();
+  if(!REDUCED)await new Promise(r=>setTimeout(r,850));
+  if(!await request('/api/exit',{}))openCurtain();
+});
 $('add-cancel').addEventListener('click',closeAdd);
 $('add-form').addEventListener('submit',e=>{
   e.preventDefault();const name=$('shortcut-name').value.trim();let url=$('shortcut-url').value.trim();if(url&&!/^[a-zA-Z]+:\/\//.test(url))url='https://'+url;

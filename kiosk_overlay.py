@@ -101,6 +101,7 @@ def poll():
         elif 'chrome' in cls or 'chromium' in cls:
             last_site=active
             if mode not in ('pill','expanded'):set_mode('pill')
+        elif output('pgrep','-x','lxqt-panel'):set_mode('hidden')
         else:set_mode('desktop')
     if mode=='expanded' and time.monotonic()-last_hover>1.8:
         x,y=root.winfo_pointerxy()

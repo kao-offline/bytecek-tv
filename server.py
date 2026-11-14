@@ -249,6 +249,8 @@ class Handler(BaseHTTPRequestHandler):
             # Give browser time to receive the response before closing it.
             def exit_launcher():
                 time.sleep(.3)
+                subprocess.run(['/opt/bytecek/desktop.sh','on'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,check=False,timeout=10)
+                time.sleep(1.2)  # let the wallpaper and panel draw before Home steps aside
                 subprocess.run(['xdotool','search','--name','Bytecek Launcher','windowminimize'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,check=False)
             threading.Thread(target=exit_launcher,daemon=True).start()
             return

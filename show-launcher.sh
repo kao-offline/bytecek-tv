@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -u
+/opt/bytecek/desktop.sh off
 LAUNCHER="$(xdotool search --name '^Bytecek Launcher( - .*)?$' 2>/dev/null | tail -n 1 || true)"
 if [[ -n "$LAUNCHER" ]]; then
   touch "/run/user/$(id -u tvbox 2>/dev/null || id -u)/bytecek-home-shown" 2>/dev/null || true
