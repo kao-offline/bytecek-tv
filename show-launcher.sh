@@ -2,6 +2,7 @@
 set -u
 LAUNCHER="$(xdotool search --name '^Bytecek Launcher( - .*)?$' 2>/dev/null | tail -n 1 || true)"
 if [[ -n "$LAUNCHER" ]]; then
+  touch "/run/user/$(id -u tvbox 2>/dev/null || id -u)/bytecek-home-shown" 2>/dev/null || true
   xdotool windowmap "$LAUNCHER" windowactivate --sync "$LAUNCHER" 2>/dev/null || true
   exit 0
 fi

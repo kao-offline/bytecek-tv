@@ -100,6 +100,13 @@ class Handler(BaseHTTPRequestHandler):
         if path == '/api/config':
             self.reply_json(200,{'token':TOKEN,'service':window_state.service_enabled()})
             return
+        if path == '/api/home':
+            try:
+                shown = window_state.STATE.with_name('bytecek-home-shown').stat().st_mtime
+            except OSError:
+                shown = 0
+            self.reply_json(200,{'shown':shown})
+            return
         if path == '/api/continue':
             self.reply_json(200,read_continue())
             return

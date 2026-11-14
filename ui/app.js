@@ -123,31 +123,34 @@ async function request(path,payload){
 }
 
 /* Curtain: closes on launch; on return Home it closes over the screen, then opens. */
-let away=false;
-let blurTimer;
 let curtainFallback;
 let returning=false;
+let homeShown=null;
 const curtain=()=>$('curtain');
 function closeCurtain(){curtain().classList.add('closed','lit')}
 function openCurtain(){clearTimeout(curtainFallback);$('launching').hidden=true;curtain().classList.remove('closed','lit')}
 // While an app covers Home, reset the curtain to open without animating, so the return can play it.
 function resetCurtainOpen(){const c=curtain();c.classList.add('instant');openCurtain();void c.offsetWidth;c.classList.remove('instant')}
-addEventListener('blur',()=>{
-  if(launching||curtain().classList.contains('closed')){away=true;setTimeout(()=>{if(away&&!document.hasFocus())resetCurtainOpen()},400);return}
-  // Home covered by an app opened some other way (Menu, F9): count it as away after a moment.
-  blurTimer=setTimeout(()=>{if(!document.hasFocus())away=true},2500);
-});
 function playReturn(){
   if(returning)return;returning=true;
-  closeCurtain();
+  if(!curtain().classList.contains('closed'))closeCurtain();
   setTimeout(()=>{openCurtain();returning=false},REDUCED?0:1250);
 }
+// show-launcher.sh stamps the moment Home is brought back (F9, Menu, Home key).
+async function checkHomeShown(){
+  try{
+    const res=await fetch('/api/home',{cache:'no-store'});if(!res.ok)return;
+    const shown=Number((await res.json())?.shown)||0;
+    if(homeShown!==null&&shown>homeShown){homeShown=shown;welcomeBack(true);return}
+    homeShown=shown;
+  }catch{}
+}
+setInterval(checkHomeShown,300);checkHomeShown();
 function nothingFocused(){const a=document.activeElement;return !a||a===document.body}
-function welcomeBack(){
-  clearTimeout(blurTimer);
+function welcomeBack(returned){
   loadResume();
   if(nothingFocused()&&$('add-modal').hidden&&$('confirm').hidden)focusTile(selected);
-  if(away){away=false;requestAnimationFrame(()=>requestAnimationFrame(playReturn))}
+  if(returned===true)playReturn();
 }
 addEventListener('focus',welcomeBack);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')welcomeBack()});
@@ -164,7 +167,8 @@ async function launch(name,url,mode){
   setTimeout(()=>{$('launching').hidden=true;launching=false},900);
   if(!ok){setTimeout(openCurtain,600);return}
   // The app window normally covers the launcher; the curtain reopens when Home returns.
-  curtainFallback=setTimeout(()=>{if(document.hasFocus())openCurtain()},4500);
+  // The app now covers Home; reopen the curtain silently so the return can close and open it.
+  curtainFallback=setTimeout(resetCurtainOpen,1600);
 }
 function activateTile(index){const items=[...BASE,...shortcuts,{id:'add'}];const item=items[index];if(!item)return;if(item.id==='add'){openAdd();return}launch(item.name,item.url,item.mode||'app')}
 function activateResume(index){const item=resumeItems[index];if(item)launch(item.show,item.url,'app')}
