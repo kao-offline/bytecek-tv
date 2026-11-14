@@ -110,10 +110,13 @@ def launch(key,cmd,normal=False):
         entry=load().get(key,{})
         window=entry.get('window')
         if window in windows() and browser(window) and output('xprop','-id',window,'_NET_WM_PID')==entry.get('pid') and tagged(key,window):
+            iconic='Iconic' in output('xprop','-id',window,'WM_STATE')
             activate(window)
-            repaint(window)
+            if iconic:repaint(window)  # only after exit-to-desktop minimized it
             if normal:normal_window(window)
             else:apply_app_mode(window)
+            # Resume whatever Home paused (browser-extension/media.js).
+            subprocess.run(['xdotool','key','--clearmodifiers','ctrl+alt+shift+F11'],check=False,timeout=3)
             return True
         before=set(windows())
         subprocess.Popen(cmd,stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,start_new_session=True)
@@ -155,3 +158,11 @@ def preload(key,cmd):
                 return True
             time.sleep(.1)
         return False
+
+def minimize_apps():
+    """Hide remembered app windows (used when leaving to the desktop)."""
+    live=windows()
+    for entry in load().values():
+        window=entry.get('window')
+        if window in live and browser(window):
+            subprocess.run(['xdotool','windowminimize',window],check=False,timeout=3)

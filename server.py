@@ -251,6 +251,7 @@ class Handler(BaseHTTPRequestHandler):
                 time.sleep(.3)
                 subprocess.run(['/opt/bytecek/desktop.sh','on'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,check=False,timeout=10)
                 time.sleep(1.2)  # let the wallpaper and panel draw before Home steps aside
+                window_state.minimize_apps()  # apps stay behind Home, not on the desktop
                 subprocess.run(['xdotool','search','--name','Bytecek Launcher','windowminimize'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,check=False)
             threading.Thread(target=exit_launcher,daemon=True).start()
             return

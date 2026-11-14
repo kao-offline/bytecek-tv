@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Hide the active site and show Home; do not close tabs or lose playback position.
+# Pause the active site and show Home on top of it; tabs and playback position are kept.
 set -u
 ACTIVE="${1:-$(xdotool getactivewindow 2>/dev/null || true)}"
 if [[ -n "$ACTIVE" ]]; then
@@ -7,10 +7,8 @@ if [[ -n "$ACTIVE" ]]; then
   CLASS="$(xprop -id "$ACTIVE" WM_CLASS 2>/dev/null || true)"
   if [[ "$NAME" != Bytecek\ Launcher* ]]; then
     case "$CLASS" in *hromium*|*hrome*)
-      # Let the app draw its curtain closed first (see browser-extension/intro.js).
-      xdotool windowactivate --sync "$ACTIVE" key --clearmodifiers ctrl+alt+shift+F12 2>/dev/null || true
-      sleep 0.2
-      xdotool windowminimize "$ACTIVE" 2>/dev/null || true ;;
+      # Pause its media (browser-extension/media.js); the app stays mapped behind Home.
+      xdotool windowactivate --sync "$ACTIVE" key --clearmodifiers ctrl+alt+shift+F12 2>/dev/null || true ;;
     esac
   fi
 fi
