@@ -1,2 +1,5 @@
 "/opt/bytecek/home.sh"
   F9
+
+"python3 /opt/bytecek/service_mode.py toggle"
+  F10

@@ -2,7 +2,7 @@
 
 const BASE = [
   {id:'spilled',name:'Spilled',url:'https://spilled.kaooffline.top/',mode:'app',icon:'spilled'},
-  {id:'ct24',name:'ČT24',url:'https://ct24.ceskatelevize.cz/video/zive-vysilani',mode:'app',icon:'ct24'},
+  {id:'ct24',name:'ÄŒT24',url:'https://ct24.ceskatelevize.cz/video/zive-vysilani',mode:'app',icon:'ct24'},
   {id:'chrome',name:'Chrome',url:'https://www.google.com/',mode:'browser',icon:'chrome'}
 ];
 const STORAGE_KEY = 'bytecek-shortcuts-v1';
@@ -60,6 +60,18 @@ function render(){
 }
 
 function focusTile(index){const tiles=[...document.querySelectorAll('.tile')];selected=Math.max(0,Math.min(index,tiles.length-1));tiles[selected]?.focus();tiles[selected]?.scrollIntoView({block:'nearest',inline:'nearest',behavior:'smooth'})}
+let serviceMode=false;
+function renderService(enabled){
+  serviceMode=Boolean(enabled);
+  $('service-toggle').textContent='Service: '+(serviceMode?'on':'off');
+  $('service-toggle').setAttribute('aria-pressed',String(serviceMode));
+  $('service-indicator').hidden=!serviceMode;
+}
+$('service-toggle').addEventListener('click',async()=>{
+  const result=await request('/api/service',{enabled:!serviceMode});
+  if(result)renderService(result.service);
+});
+setInterval(()=>fetch('/api/config',{cache:'no-store'}).then(r=>r.json()).then(data=>renderService(data.service)).catch(()=>{}),3000);
 let tokenRefresh=null;
 async function refreshToken(){
   if(!tokenRefresh)tokenRefresh=(async()=>{
@@ -68,6 +80,7 @@ async function refreshToken(){
     const data=await response.json();
     if(!data.token)throw Error('Launcher service is unavailable');
     apiToken=data.token;
+    renderService(data.service);
   })().finally(()=>{tokenRefresh=null});
   return tokenRefresh;
 }

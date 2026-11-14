@@ -9,7 +9,10 @@ import threading
 import time
 from pathlib import Path
 
-STATE = Path(os.environ.get('XDG_RUNTIME_DIR', str(Path.home()/'.local/state/bytecek'))) / f'bytecek-windows-{os.getuid() if hasattr(os,"getuid") else "test"}.json'
+UID = os.getuid() if hasattr(os,'getuid') else 'test'
+RUNTIME = Path(os.environ.get('XDG_RUNTIME_DIR',f'/run/user/{UID}'))
+if not RUNTIME.is_dir():RUNTIME=Path.home()/'.local/state/bytecek'
+STATE = RUNTIME / f'bytecek-windows-{UID}.json'
 LOCK = threading.Lock()
 
 def output(*args):
@@ -68,6 +71,32 @@ def normal_window(window):
     subprocess.run(['wmctrl','-ir',window,'-b','remove,fullscreen'],check=False,timeout=3)
     subprocess.run(['wmctrl','-ir',window,'-b','add,maximized_vert,maximized_horz'],check=False,timeout=3)
 
+SERVICE = STATE.with_name('bytecek-service-mode')
+
+def service_enabled():
+    return SERVICE.exists()
+
+def apply_app_mode(window):
+    if service_enabled():
+        subprocess.run(['wmctrl','-ir',window,'-b','remove,fullscreen'],check=False,timeout=3)
+        subprocess.run(['wmctrl','-ir',window,'-b','remove,maximized_vert,maximized_horz'],check=False,timeout=3)
+        subprocess.run(['wmctrl','-ir',window,'-e','0,80,80,1280,850'],check=False,timeout=3)
+    else:
+        subprocess.run(['wmctrl','-ir',window,'-b','add,fullscreen'],check=False,timeout=3)
+
+def set_service_mode(enabled):
+    SERVICE.parent.mkdir(mode=0o700,parents=True,exist_ok=True)
+    if enabled:
+        SERVICE.touch(mode=0o600)
+    else:
+        SERVICE.unlink(missing_ok=True)
+    live=windows()
+    for key,entry in load().items():
+        window=entry.get('window')
+        if key.startswith('app|') and window in live and browser(window) and output('xprop','-id',window,'_NET_WM_PID')==entry.get('pid') and tagged(key,window):
+            apply_app_mode(window)
+    return enabled
+
 def launch(key,cmd,normal=False):
     with LOCK:
         entry=load().get(key,{})
@@ -75,7 +104,7 @@ def launch(key,cmd,normal=False):
         if window in windows() and browser(window) and output('xprop','-id',window,'_NET_WM_PID')==entry.get('pid') and tagged(key,window):
             activate(window)
             if normal:normal_window(window)
-            else:subprocess.run(['wmctrl','-ir',window,'-b','add,fullscreen'],check=False,timeout=3)
+            else:apply_app_mode(window)
             return True
         before=set(windows())
         subprocess.Popen(cmd,stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,start_new_session=True)
@@ -85,7 +114,7 @@ def launch(key,cmd,normal=False):
             if fresh:
                 remember(key,fresh[-1])
                 if normal:normal_window(fresh[-1])
-                else:subprocess.run(['wmctrl','-ir',fresh[-1],'-b','add,fullscreen'],check=False,timeout=3)
+                else:apply_app_mode(fresh[-1])
                 return False
             time.sleep(.1)
         return False

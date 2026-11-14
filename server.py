@@ -47,7 +47,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = self.path.split('?',1)[0]
         if path == '/api/config':
-            self.reply_json(200,{'token':TOKEN})
+            self.reply_json(200,{'token':TOKEN,'service':window_state.service_enabled()})
             return
         if path == '/':
             path = '/index.html'
@@ -81,6 +81,15 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValueError('Invalid JSON payload')
         except (ValueError,json.JSONDecodeError):
             self.reply_json(400,{'error':'Invalid request'})
+            return
+
+        if self.path == '/api/service':
+            enabled=body.get('enabled')
+            if not isinstance(enabled,bool):
+                self.reply_json(400,{'error':'Service mode must be true or false'})
+                return
+            window_state.set_service_mode(enabled)
+            self.reply_json(200,{'ok':True,'service':enabled})
             return
 
         if self.path == '/api/launch':

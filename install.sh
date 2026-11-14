@@ -36,7 +36,7 @@ install -m 644 "$SCRIPT_DIR"/boot/* /opt/bytecek/boot/
 install -m 644 "$SCRIPT_DIR"/browser-extension/* /opt/bytecek/browser-extension/
 install -m 644 "$SCRIPT_DIR/kiosk_overlay.py" /opt/bytecek/kiosk_overlay.py
 install -m 644 "$SCRIPT_DIR/openbox.xml" /opt/bytecek/openbox.xml
-install -m 644 "$SCRIPT_DIR/server.py" "$SCRIPT_DIR/window_state.py" /opt/bytecek/
+install -m 644 "$SCRIPT_DIR/server.py" "$SCRIPT_DIR/window_state.py" "$SCRIPT_DIR/service_mode.py" /opt/bytecek/
 install -m 755 "$SCRIPT_DIR/show-launcher.sh" /opt/bytecek/
 install -d -m 755 /usr/local/share/applications
 install -m 644 "$SCRIPT_DIR/bytecek-launcher.desktop" /usr/local/share/applications/

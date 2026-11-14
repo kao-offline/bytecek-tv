@@ -66,6 +66,15 @@ class LauncherServerTest(unittest.TestCase):
             self.assertIn('chrome://newtab/',launch.call_args[0][1])
             self.assertTrue(launch.call_args.kwargs['normal'])
 
+    def test_service_mode_requires_boolean(self):
+        with patch.object(server.window_state,'set_service_mode') as toggle:
+            status,_=self.call('POST','/api/service',{'enabled':'yes'})
+            self.assertEqual(status,400)
+            toggle.assert_not_called()
+            status,data=self.call('POST','/api/service',{'enabled':True})
+            self.assertEqual((status,data['service']),(200,True))
+            toggle.assert_called_once_with(True)
+
     def test_brand_assets(self):
         for path, mime in (('/icons/spilled.png','image/png'),('/icons/ct24.svg','image/svg+xml'),('/icons/chrome.svg','image/svg+xml')):
             conn=http.client.HTTPConnection('127.0.0.1',self.port,timeout=2)

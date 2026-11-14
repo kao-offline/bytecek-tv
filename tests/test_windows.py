@@ -39,4 +39,17 @@ class WindowReuseTest(unittest.TestCase):
             self.assertEqual(commands[0],['xdotool','windowactivate','--sync','0x123','key','--clearmodifiers','F11'])
             self.assertEqual(commands[-1],['wmctrl','-ir','0x123','-b','add,maximized_vert,maximized_horz'])
 
+    def test_service_mode_never_fullscreens_apps(self):
+        with patch.object(window_state,'service_enabled',return_value=True), patch.object(window_state.subprocess,'run') as run:
+            window_state.apply_app_mode('0x123')
+            commands=[call.args[0] for call in run.call_args_list]
+            self.assertIn(['wmctrl','-ir','0x123','-b','remove,fullscreen'],commands)
+            self.assertNotIn(['wmctrl','-ir','0x123','-b','add,fullscreen'],commands)
+            self.assertFalse(any(command[0]=='xdotool' for command in commands))
+
+    def test_tv_mode_restores_app_fullscreen(self):
+        with patch.object(window_state,'service_enabled',return_value=False), patch.object(window_state.subprocess,'run') as run:
+            window_state.apply_app_mode('0x123')
+            run.assert_called_once_with(['wmctrl','-ir','0x123','-b','add,fullscreen'],check=False,timeout=3)
+
 if __name__=='__main__':unittest.main()

@@ -203,3 +203,22 @@ After an API service restart, Home refreshes its local request token and retries
 a rejected request once. This local token is unrelated to Spilled account
 refresh tokens. A revoked Spilled account session still requires signing in
 again; no account security checks are bypassed.
+
+## TV controls and service mode
+
+The corner Menu handle and expanded controls scale with display resolution.
+At 1080p the handle is 120x44 and the panel is 440x164, with a large Home button.
+The panel collapses again when the pointer moves away. Home/F9 minimizes the
+current app and restores the launcher; returning through a tile keeps the same
+live window and page state.
+
+**Service mode** is available from the corner panel, the Service button on Home,
+or **F10** anywhere in the X session. Enabling it removes fullscreen from tracked
+app windows and allows resizing. Apps launched/resumed while service mode is on
+stay windowed. Select **Lock to TV** or press F10 again to restore app fullscreen.
+The Home screen shows a service-mode indicator. Chrome remains a normal browser
+and is not forced into app fullscreen by either mode.
+
+Service mode is a convenience switch, not a security boundary. It applies to the
+current TV login session and defaults to locked TV mode after reboot. Changing
+modes does not close/reload pages or clear browser/login data.

@@ -71,3 +71,8 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--red);outline-of
 .tile{width:100%;max-width:none}
 @media(max-width:900px){.shortcuts{grid-template-columns:repeat(4,minmax(0,140px));padding-top:20px}.tile{width:100%}}
 @media(max-width:600px){.shortcuts{grid-template-columns:repeat(3,minmax(0,140px))}.tile{width:100%}}
+
+.service-toggle{position:absolute;right:2%;top:3%;border:1px solid #777;background:#303030;border-radius:12px;padding:14px 20px;font-size:clamp(18px,1.5vw,28px)}
+.service-toggle[aria-pressed=true]{background:#665020;border-color:#e8bf63}
+.service-indicator{position:absolute;bottom:5%;left:50%;transform:translateX(-50%);font-size:clamp(16px,1.3vw,25px);color:#e8bf63;text-align:center;max-width:60vw}
+.service-indicator[hidden]{display:none}
