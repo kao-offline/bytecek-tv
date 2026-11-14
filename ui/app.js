@@ -61,7 +61,7 @@ function renderResume(){
   const row=$('resume-row'),list=$('resume-list');
   row.hidden=!resumeItems.length;
   list.innerHTML=resumeItems.map((item,i)=>{
-    const art=item.image?`<img src="${escapeText(item.image)}" alt="" referrerpolicy="no-referrer" loading="lazy">`:'';
+    const art=item.image?`<img data-src="${escapeText(item.image)}" alt="" referrerpolicy="no-referrer" decoding="async">`:'';
     const meta=[item.label,item.left].filter(Boolean).join(' · ');
     return `<button class="resume" style="--i:${BASE.length+shortcuts.length+1+i}" data-resume="${i}" aria-label="${escapeText(item.show)}${meta?', '+escapeText(meta):''}"><span class="resume-art"><span class="resume-initial" aria-hidden="true">${escapeText(item.show.slice(0,1))}</span>${art}</span><span class="resume-text"><span class="resume-show">${escapeText(item.show)}</span><span class="resume-meta">${escapeText(meta)}</span></span><span class="resume-progress" style="--p:${Math.max(0,Math.min(100,Number(item.progress)||0))}%"></span></button>`;
   }).join('');
@@ -70,7 +70,10 @@ function renderResume(){
     hoverFocus(card);
   });
   list.querySelectorAll('img').forEach(img=>img.addEventListener('error',()=>img.remove()));
+  if(curtainSettled)showPosters();
 }
+let curtainSettled=false;
+function showPosters(){document.querySelectorAll('.resume-art img[data-src]').forEach(img=>{img.src=img.dataset.src;img.removeAttribute('data-src')})}
 async function loadResume(){
   try{
     const res=await fetch('/api/continue',{cache:'no-store'});
@@ -207,7 +210,16 @@ shortcuts=loadShortcuts();render();
 refreshToken().catch(()=>showToast('Launcher service unavailable'));
 loadResume();setInterval(()=>{if(document.visibilityState==='visible')loadResume()},60000);
 
-// Boot: the B lights on the closed curtain, then the curtain parts.
+// Boot: the B lights on the closed curtain, then the curtain parts once the page has painted.
+const frames=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+const pageReady=Promise.race([
+  Promise.all([document.fonts?.ready,document.readyState==='complete'?null:new Promise(r=>addEventListener('load',r,{once:true}))]),
+  new Promise(r=>setTimeout(r,2500))
+]);
 setTimeout(()=>$('curtain').classList.add('lit'),REDUCED?0:120);
-setTimeout(()=>{openCurtain();focusTile(0)},REDUCED?0:520);
-setTimeout(()=>$('shell').classList.remove('enter'),2600);
+Promise.all([pageReady,new Promise(r=>setTimeout(r,REDUCED?0:700))]).then(frames).then(()=>{
+  $('shell').classList.add('play');
+  openCurtain();focusTile(0);
+  setTimeout(()=>{curtainSettled=true;showPosters()},REDUCED?0:1150);
+  setTimeout(()=>$('shell').classList.remove('enter','play'),REDUCED?0:2400);
+});

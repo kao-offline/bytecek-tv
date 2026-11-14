@@ -75,7 +75,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--bulb);outline-o
 .resume:focus,.resume:focus-visible{outline:0}
 .resume:focus,.resume:hover{transform:translateY(-6px) scale(1.04);box-shadow:inset 0 0 0 1px rgba(255,217,140,.6),0 18px 34px rgba(0,0,0,.55)}
 .resume-art{position:absolute;inset:0;border-radius:inherit;overflow:hidden;background:linear-gradient(140deg,var(--velvet),var(--velvet-dark))}
-.resume-art img{width:100%;height:100%;object-fit:cover;display:block}
+.resume-art img{width:100%;height:100%;object-fit:cover;display:block;animation:fade .6s ease both}
 .resume-initial{position:absolute;inset:0;display:grid;place-items:center;font-size:clamp(60px,5vw,96px);font-weight:700;color:rgba(246,233,204,.22)}
 .resume-art::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 38%,rgba(10,4,5,.88) 100%)}
 .resume-text{position:absolute;left:16px;right:16px;bottom:18px;display:flex;flex-direction:column;gap:2px}
@@ -118,7 +118,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--bulb);outline-o
   background:
     linear-gradient(180deg,rgba(0,0,0,.5) 0%,transparent 18%,transparent 82%,rgba(0,0,0,.45) 100%),
     linear-gradient(90deg,#2c070c 0%,#6a1520 5%,#3a0910 9%,#7a1a25 15%,#450b13 19%,#5e121c 24%,#2f080d 28%,#741823 35%,#4a0c14 40%,#6b1621 46%,#320a0f 50%,#701723 57%,#420b12 62%,#7c1b26 69%,#3b0a11 74%,#62131d 80%,#2e070c 85%,#731822 92%,#3d0a11 100%);
-  transition:transform 1.05s var(--ease-curtain)}
+  transition:transform 1.05s var(--ease-curtain);will-change:transform;backface-visibility:hidden}
 .curtain::before{content:"";position:absolute;inset:0;background:rgba(6,2,3,.62);opacity:0;transition:opacity .45s ease}
 .curtain.closed::before{opacity:1}
 .curtain-half.left{left:0;transform:translateX(-102%);box-shadow:inset -30px 0 40px -20px rgba(0,0,0,.7)}
@@ -133,9 +133,10 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--bulb);outline-o
 .launching p{margin:0;font-size:clamp(28px,2.6vw,46px);font-weight:600;letter-spacing:.03em;color:var(--cream);animation:fade .4s ease both}
 
 /* Entrance after the curtain parts */
-.shell.enter .brand,.shell.enter .clock{animation:fade 1s ease .55s backwards}
-.shell.enter .tile,.shell.enter .resume{animation:rise .8s var(--ease-out) backwards;animation-delay:calc(.6s + var(--i,0) * 55ms)}
-.shell.enter .resume-row h2{animation:fade .8s ease .9s backwards}
+.shell.enter:not(.play) :is(.brand,.clock,.tile,.resume,.resume-row h2){opacity:0}
+.shell.play .brand,.shell.play .clock{animation:fade 1s ease .35s backwards}
+.shell.play .tile,.shell.play .resume{animation:rise .8s var(--ease-out) backwards;animation-delay:calc(.35s + var(--i,0) * 55ms)}
+.shell.play .resume-row h2{animation:fade .8s ease .6s backwards}
 
 @keyframes rise{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
 @keyframes pop{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:none}}
