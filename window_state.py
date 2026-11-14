@@ -31,6 +31,14 @@ def browser(window):
 def activate(window):
     subprocess.run(['xdotool','windowmap',window,'windowactivate','--sync',window],check=False,timeout=3)
 
+def repaint(window):
+    # Chromium may leave a window restored from minimized unpainted (the screen keeps
+    # showing Home). Dropping fullscreen/maximize for a moment forces a fresh frame;
+    # the mode functions below put it back.
+    subprocess.run(['wmctrl','-ir',window,'-b','remove,fullscreen'],check=False,timeout=3)
+    subprocess.run(['wmctrl','-ir',window,'-b','remove,maximized_vert,maximized_horz'],check=False,timeout=3)
+    time.sleep(.15)
+
 def load():
     try:
         data=json.loads(STATE.read_text())
@@ -103,6 +111,7 @@ def launch(key,cmd,normal=False):
         window=entry.get('window')
         if window in windows() and browser(window) and output('xprop','-id',window,'_NET_WM_PID')==entry.get('pid') and tagged(key,window):
             activate(window)
+            repaint(window)
             if normal:normal_window(window)
             else:apply_app_mode(window)
             return True
