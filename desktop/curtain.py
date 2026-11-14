@@ -64,18 +64,22 @@ def main():
         canvas.create_image(0, 0, image=img, anchor='nw')
         canvas.image = img
         win.attributes('-topmost', True)
-        return win
+        return win, img
 
-    left, right = panel(0, False), panel(w - half, True)
+    (left, left_img), (right, right_img) = panel(0, False), panel(w - half, True)
     logo = None
     try:
         logo_img = tk.PhotoImage(file='/opt/bytecek/boot/b.png')
         lw, lh = logo_img.width(), logo_img.height()
         logo = tk.Toplevel(root)
         logo.overrideredirect(True)
-        logo.geometry(f'{lw}x{lh}+{(w - lw) // 2}+{(h - lh) // 2}')
+        x0, y0 = (w - lw) // 2, (h - lh) // 2
+        logo.geometry(f'{lw}x{lh}+{x0}+{y0}')
         lc = tk.Canvas(logo, width=lw, height=lh, highlightthickness=0, bd=0, bg='#320a0f')
         lc.pack()
+        # The curtain behind the logo, so its transparent edges blend in.
+        lc.create_image(-x0, -y0, image=left_img, anchor='nw')
+        lc.create_image(w - half - x0, -y0, image=right_img, anchor='nw')
         lc.create_image(0, 0, image=logo_img, anchor='nw')
         lc.image = logo_img
         logo.attributes('-topmost', True)
