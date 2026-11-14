@@ -123,6 +123,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--bulb);outline-o
 .curtain.closed::before{opacity:1}
 .curtain-half.left{left:0;transform:translateX(-102%);box-shadow:inset -30px 0 40px -20px rgba(0,0,0,.7)}
 .curtain-half.right{right:0;transform:translateX(102%) scaleX(-1);box-shadow:inset -30px 0 40px -20px rgba(0,0,0,.7)}
+.curtain.instant .curtain-half,.curtain.instant .curtain-logo,.curtain.instant::before{transition:none!important}
 .curtain.closed .curtain-half{transform:none}
 .curtain.closed .curtain-half.right{transform:scaleX(-1)}
 .curtain-logo{position:absolute;left:50%;top:50%;width:clamp(96px,9vw,160px);height:auto;transform:translate(-50%,-50%) scale(.9);opacity:0;filter:drop-shadow(0 0 3px rgba(20,4,6,.95)) drop-shadow(0 10px 30px rgba(10,2,3,.9)) drop-shadow(0 0 24px rgba(255,110,80,.35));transition:opacity .35s ease,transform .6s var(--ease-out)}
