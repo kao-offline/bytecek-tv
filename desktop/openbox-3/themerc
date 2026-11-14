@@ -1,0 +1,75 @@
+# Bytecek: oxblood house, cream type, logo red on hover. Large controls for TV distance.
+border.width: 2
+padding.width: 10
+padding.height: 8
+window.handle.width: 0
+window.client.padding.width: 0
+window.client.padding.height: 0
+window.label.text.justify: center
+window.active.border.color: #a7814b
+window.inactive.border.color: #3a1a1c
+window.active.client.color: #24120f
+window.inactive.client.color: #1a0b0d
+window.active.title.bg: flat solid
+window.active.title.bg.color: #2a0f13
+window.inactive.title.bg: flat solid
+window.inactive.title.bg.color: #160a0b
+window.active.label.bg: parentrelative
+window.inactive.label.bg: parentrelative
+window.active.label.text.color: #f6e9cc
+window.inactive.label.text.color: #8d7d66
+window.active.button.unpressed.bg: flat solid
+window.active.button.unpressed.bg.color: #2a0f13
+window.active.button.unpressed.image.color: #f6e9cc
+window.active.button.hover.bg: flat solid
+window.active.button.hover.bg.color: #e12929
+window.active.button.hover.image.color: #ffffff
+window.active.button.pressed.bg: flat solid
+window.active.button.pressed.bg.color: #9a1414
+window.active.button.pressed.image.color: #ffffff
+window.active.button.disabled.bg: flat solid
+window.active.button.disabled.bg.color: #2a0f13
+window.active.button.disabled.image.color: #5a4a40
+window.active.button.toggled.bg: flat solid
+window.active.button.toggled.bg.color: #2a0f13
+window.active.button.toggled.image.color: #f6e9cc
+window.inactive.button.unpressed.bg: flat solid
+window.inactive.button.unpressed.bg.color: #160a0b
+window.inactive.button.unpressed.image.color: #8d7d66
+window.inactive.button.hover.bg: flat solid
+window.inactive.button.hover.bg.color: #e12929
+window.inactive.button.hover.image.color: #ffffff
+window.inactive.button.pressed.bg: flat solid
+window.inactive.button.pressed.bg.color: #9a1414
+window.inactive.button.pressed.image.color: #ffffff
+window.inactive.button.disabled.bg: flat solid
+window.inactive.button.disabled.bg.color: #160a0b
+window.inactive.button.disabled.image.color: #3a2a24
+window.inactive.button.toggled.bg: flat solid
+window.inactive.button.toggled.bg.color: #160a0b
+window.inactive.button.toggled.image.color: #8d7d66
+menu.border.width: 1
+menu.border.color: #a7814b
+menu.overlap.x: 0
+menu.overlap.y: 0
+menu.title.bg: flat solid
+menu.title.bg.color: #2a0f13
+menu.title.text.color: #f6e9cc
+menu.title.text.justify: center
+menu.items.bg: flat solid
+menu.items.bg.color: #24120f
+menu.items.text.color: #f6e9cc
+menu.items.disabled.text.color: #6a5a4c
+menu.items.active.bg: flat solid
+menu.items.active.bg.color: #e12929
+menu.items.active.text.color: #ffffff
+menu.separator.color: #4a2a24
+osd.border.width: 1
+osd.border.color: #a7814b
+osd.bg: flat solid
+osd.bg.color: #24120f
+osd.label.text.color: #f6e9cc
+osd.hilight.bg: flat solid
+osd.hilight.bg.color: #e12929
+osd.unhilight.bg: flat solid
+osd.unhilight.bg.color: #3a1a1c

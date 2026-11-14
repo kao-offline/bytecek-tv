@@ -51,6 +51,10 @@ install -d -o tvbox -g tvbox /home/tvbox/.config/bytecek
 install -o tvbox -g tvbox -m 644 "$SCRIPT_DIR/openbox.xml" /home/tvbox/.config/bytecek/openbox-active.xml
 ln -sfn /home/tvbox/.config/bytecek/openbox-active.xml /opt/bytecek/openbox.xml
 install -m 755 "$SCRIPT_DIR/desktop.sh" /opt/bytecek/desktop.sh
+install -d -m 755 /opt/bytecek/desktop /usr/share/themes/Bytecek/openbox-3
+install -m 644 "$SCRIPT_DIR"/desktop/wallpaper.svg "$SCRIPT_DIR"/desktop/apply-theme.py "$SCRIPT_DIR"/desktop/curtain.py /opt/bytecek/desktop/
+install -m 644 "$SCRIPT_DIR"/desktop/openbox-3/* /usr/share/themes/Bytecek/openbox-3/
+runuser -u tvbox -- python3 /opt/bytecek/desktop/apply-theme.py
 install -m 644 "$SCRIPT_DIR/server.py" "$SCRIPT_DIR/window_state.py" "$SCRIPT_DIR/service_mode.py" /opt/bytecek/
 install -m 755 "$SCRIPT_DIR/show-launcher.sh" /opt/bytecek/
 install -d -m 755 /usr/local/share/applications
