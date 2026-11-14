@@ -89,4 +89,36 @@ class LauncherServerTest(unittest.TestCase):
         status,_=self.call('POST','/api/power',{'action':'sudo rm -rf /'})
         self.assertEqual(status,400)
 
+    def ext_call(self, path, payload, origin='chrome-extension://abcdefghijklmnop'):
+        conn=http.client.HTTPConnection('127.0.0.1',self.port,timeout=2)
+        conn.request('POST',path,json.dumps(payload).encode(),{'Content-Type':'application/json','Origin':origin})
+        res=conn.getresponse();status=res.status;body=json.loads(res.read());conn.close();return status,body
+
+    def test_continue_watching_roundtrip(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp, patch.object(server,'STATE_DIR',Path(tmp)), patch.object(server,'CONTINUE_FILE',Path(tmp)/'c.json'):
+            items=[{'id':'ep/1','show':'Show','label':'S1 E2','left':'12 min left','progress':140,'image':'javascript:alert(1)','url':'https://evil.example/'},{'show':'no id'}]
+            status,data=self.ext_call('/api/spilled/continue',{'items':items})
+            self.assertEqual((status,data['count']),(200,1))
+            status,data=self.call('GET','/api/continue')
+            item=data['items'][0]
+            self.assertEqual(item['url'],'https://spilled.kaooffline.top/library/watch/ep%2F1')
+            self.assertEqual((item['progress'],item['image']),(100,''))
+            status,_=self.ext_call('/api/spilled/continue',{'items':[]},origin='https://evil.example')
+            self.assertEqual(status,403)
+
+    def test_episode_reuses_spilled_window_and_queues_jump(self):
+        url='https://spilled.kaooffline.top/library/watch/abc'
+        with patch.object(server.window_state,'launch',return_value=True) as launch, patch.object(server,'BROWSER','/usr/bin/chromium'):
+            status,_=self.call('POST','/api/launch',{'url':url,'mode':'app'})
+            self.assertEqual(status,200)
+            self.assertEqual(launch.call_args[0][0],'app|https://spilled.kaooffline.top/')
+        self.assertEqual(self.ext_call('/api/spilled/pending',{})[1],{'url':url})
+        self.assertEqual(self.ext_call('/api/spilled/pending',{})[1],{})
+
+    def test_font_served(self):
+        conn=http.client.HTTPConnection('127.0.0.1',self.port,timeout=2)
+        conn.request('GET','/fonts/BigShouldersDisplay.ttf');res=conn.getresponse();res.read();conn.close()
+        self.assertEqual((res.status,res.getheader('Content-Type')),(200,'font/ttf'))
+
 if __name__=='__main__':unittest.main()

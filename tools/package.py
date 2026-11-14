@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'dist'
 OUT.mkdir(exist_ok=True)
 files = sorted(p for p in ROOT.rglob('*') if p.is_file() and not
-    any(part in {'.git', 'dist', '__pycache__', '.venv'} for part in p.relative_to(ROOT).parts)
+    any(part in {'.git', 'dist', '__pycache__', '.venv', '.impeccable', '.claude'} for part in p.relative_to(ROOT).parts)
     and p.name != 'preview.png' and p.suffix not in {'.pyc', '.pyo'})
 with tarfile.open(OUT / 'bytecek-tv.tar.gz', 'w:gz') as tar, zipfile.ZipFile(
         OUT / 'bytecek-tv-source.zip', 'w', zipfile.ZIP_DEFLATED) as zipf:

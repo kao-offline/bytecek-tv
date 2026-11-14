@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-14T00:00:00Z",
+  "title": "Design System: Bytecek TV",
+  "extensions": {
+    "colorMeta": {
+      "bulb": { "role": "primary", "displayName": "Marquee Bulb", "canonical": "#ffd98c", "tonalRamp": ["#3d2a08", "#5e4313", "#80601f", "#a37e33", "#c69d4f", "#e6bd6c", "#ffd98c", "#fff1d6"] },
+      "logo-red": { "role": "secondary", "displayName": "Logo Red", "canonical": "#e12929", "tonalRamp": ["#3a0606", "#5e0c0c", "#861414", "#b11d1d", "#e12929", "#ec6058", "#f49a92", "#fbd3cf"] },
+      "brass": { "role": "tertiary", "displayName": "Brass Trim", "canonical": "#a7814b", "tonalRamp": ["#2b2013", "#45341f", "#61492c", "#83643c", "#a7814b", "#bf9d6f", "#d6bd98", "#ede0cb"] },
+      "ground": { "role": "neutral", "displayName": "House Ground", "canonical": "#120809", "tonalRamp": ["#0b0506", "#120809", "#1b0b0e", "#2a1517", "#3f2527", "#5a3c3e", "#7d6062", "#a8908f"] },
+      "ground-deep": { "role": "neutral", "displayName": "Deep Ground", "canonical": "#0b0506", "tonalRamp": ["#050203", "#0b0506", "#140a0b", "#211315", "#352325", "#4e393b", "#6e5759", "#968082"] },
+      "velvet": { "role": "neutral", "displayName": "Velvet", "canonical": "#5a1019", "tonalRamp": ["#1c0408", "#2c070c", "#420b13", "#5a1019", "#7c1b26", "#a23e48", "#c97880", "#ecc1c4"] },
+      "velvet-dark": { "role": "neutral", "displayName": "Dark Velvet", "canonical": "#2c070c", "tonalRamp": ["#140305", "#2c070c", "#3d0a11", "#521019", "#6e1d27", "#934450", "#bd7f86", "#e6c3c6"] },
+      "card": { "role": "neutral", "displayName": "Booth Brown", "canonical": "#24120f", "tonalRamp": ["#120806", "#24120f", "#341c17", "#4a2b24", "#664138", "#8a6156", "#b28d81", "#dcc3ba"] },
+      "cream": { "role": "neutral", "displayName": "Cream Light", "canonical": "#f6e9cc", "tonalRamp": ["#3a3222", "#5c513b", "#807257", "#a49477", "#c6b697", "#e0d0b2", "#f6e9cc", "#fdf8ec"] },
+      "cream-dim": { "role": "neutral", "displayName": "Dim Cream", "canonical": "#bfae91", "tonalRamp": ["#2d271d", "#49402f", "#665a44", "#85765b", "#a39274", "#bfae91", "#d8cab1", "#efe6d6"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Wordmark; dialog titles at 700." },
+      "headline": { "displayName": "Headline", "purpose": "Text actions: dialog buttons, power menu, exit (larger)." },
+      "title": { "displayName": "Title", "purpose": "Tile labels, row heading, episode show names." },
+      "body": { "displayName": "Body", "purpose": "Field text and labels, toast." },
+      "label": { "displayName": "Label", "purpose": "Episode meta lines." }
+    },
+    "shadows": [
+      { "name": "resting", "value": "inset 0 0 0 1px rgba(167,129,75,.38), 0 10px 22px rgba(0,0,0,.45)", "purpose": "Tiles and episode cards at rest." },
+      { "name": "lifted", "value": "inset 0 0 0 1px rgba(255,217,140,.6), 0 18px 34px rgba(0,0,0,.55)", "purpose": "Focused or hovered tile and card." },
+      { "name": "panel", "value": "inset 0 0 0 1px rgba(167,129,75,.38), 0 18px 40px rgba(0,0,0,.6)", "purpose": "Power panel." },
+      { "name": "floating", "value": "inset 0 0 0 1px rgba(167,129,75,.45), 0 26px 60px rgba(0,0,0,.65)", "purpose": "Dialogs." },
+      { "name": "bulb-glow", "value": "drop-shadow(0 0 5px rgba(255,200,110,.85))", "purpose": "Filter on the bulb ring only." }
+    ],
+    "motion": [
+      { "name": "ease-out", "value": "cubic-bezier(.16,1,.3,1)", "purpose": "All state changes: lift, ring, pop, rise." },
+      { "name": "ease-curtain", "value": "cubic-bezier(.72,0,.18,1)", "purpose": "Curtain halves, 1.05s." },
+      { "name": "bulbs", "value": "2.4s steps(2,jump-none) infinite", "purpose": "Slow two-step pulse of the lit bulb ring (opacity 1 to .72)." },
+      { "name": "focus-lift", "value": ".42s", "purpose": "Tile and card transform and shadow transition." },
+      { "name": "rise-stagger", "value": ".8s, delay .6s + index * 55ms", "purpose": "Tiles and cards entering after the curtain parts." },
+      { "name": "pop", "value": ".3-.36s", "purpose": "Dialogs, power panel, toast entrance (scale .94, translateY 8px)." }
+    ],
+    "breakpoints": [
+      { "name": "compact", "value": "900px" },
+      { "name": "narrow", "value": "600px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "App Tile",
+      "kind": "card",
+      "refersTo": "app-tile",
+      "description": "Booth-brown squircle with a dim label; lights a bulb ring on focus.",
+      "html": "<button class=\"ds-tile\"><span class=\"ds-tile-square\"><svg viewBox=\"0 0 100 100\" aria-hidden=\"true\"><path stroke=\"#f6e9cc\" stroke-linecap=\"round\" stroke-width=\"9\" d=\"M50 18v64M18 50h64\"/></svg></span><span class=\"ds-tile-label\">add</span></button>",
+      "css": ".ds-tile{width:150px;display:flex;flex-direction:column;align-items:center;gap:14px;background:none;border:0;padding:0;font-family:\"Big Shoulders\",\"Arial Narrow\",sans-serif;cursor:pointer} .ds-tile:focus-visible{outline:0} .ds-tile-square{position:relative;width:100%;aspect-ratio:1;border-radius:24%;display:grid;place-items:center;background:#24120f;box-shadow:inset 0 0 0 1px rgba(167,129,75,.38),0 10px 22px rgba(0,0,0,.45);transition:transform .42s cubic-bezier(.16,1,.3,1),box-shadow .42s cubic-bezier(.16,1,.3,1)} .ds-tile-square svg{width:54%;height:54%} .ds-tile-square::after{content:\"\";position:absolute;inset:-13px;border-radius:calc(24% + 6px);border:5px dotted #ffd98c;opacity:0;transform:scale(.94);filter:drop-shadow(0 0 5px rgba(255,200,110,.85));transition:opacity .3s ease,transform .45s cubic-bezier(.16,1,.3,1);pointer-events:none} .ds-tile:hover .ds-tile-square,.ds-tile:focus-visible .ds-tile-square{transform:translateY(-7px) scale(1.05);box-shadow:inset 0 0 0 1px rgba(255,217,140,.6),0 18px 34px rgba(0,0,0,.55)} .ds-tile:hover .ds-tile-square::after,.ds-tile:focus-visible .ds-tile-square::after{opacity:1;transform:none} .ds-tile-label{font-size:26px;font-weight:600;letter-spacing:.02em;color:#bfae91;transition:color .3s ease} .ds-tile:hover .ds-tile-label,.ds-tile:focus-visible .ds-tile-label{color:#f6e9cc}"
+    },
+    {
+      "name": "Episode Card",
+      "kind": "card",
+      "refersTo": "resume-card",
+      "description": "16:9 continue-watching card with scrim, show name, meta and bulb progress.",
+      "html": "<button class=\"ds-resume\"><span class=\"ds-resume-art\"></span><span class=\"ds-resume-text\"><span class=\"ds-resume-show\">Show name</span><span class=\"ds-resume-meta\">S2 E4</span></span><span class=\"ds-resume-progress\"></span></button>",
+      "css": ".ds-resume{position:relative;width:320px;aspect-ratio:16/9;border:0;padding:0;border-radius:16px;background:#24120f;text-align:left;font-family:\"Big Shoulders\",\"Arial Narrow\",sans-serif;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(167,129,75,.38),0 10px 22px rgba(0,0,0,.45);transition:transform .42s cubic-bezier(.16,1,.3,1),box-shadow .42s cubic-bezier(.16,1,.3,1)} .ds-resume:hover,.ds-resume:focus-visible{outline:0;transform:translateY(-6px) scale(1.04);box-shadow:inset 0 0 0 1px rgba(255,217,140,.6),0 18px 34px rgba(0,0,0,.55)} .ds-resume-art{position:absolute;inset:0;border-radius:inherit;background:linear-gradient(140deg,#5a1019,#2c070c)} .ds-resume-art::after{content:\"\";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(180deg,transparent 38%,rgba(10,4,5,.88) 100%)} .ds-resume-text{position:absolute;left:16px;right:16px;bottom:18px;display:flex;flex-direction:column;gap:2px} .ds-resume-show{font-size:26px;font-weight:700;line-height:1.05;color:#f6e9cc} .ds-resume-meta{font-size:18px;font-weight:500;color:#d9c9ab} .ds-resume-progress{position:absolute;left:16px;right:16px;bottom:9px;height:4px;border-radius:2px;background:linear-gradient(90deg,#ffd98c 40%,rgba(246,233,204,.22) 40%)}"
+    },
+    {
+      "name": "Text Action",
+      "kind": "button",
+      "refersTo": "text-action",
+      "description": "Fill-less large type; focus turns it bulb gold with a dotted underline.",
+      "html": "<button class=\"ds-text-action\">cancel</button>",
+      "css": ".ds-text-action{font-family:\"Big Shoulders\",\"Arial Narrow\",sans-serif;font-size:40px;font-weight:600;padding:4px 6px;border:0;background:none;color:#bfae91;cursor:pointer;transition:color .15s ease} .ds-text-action:hover,.ds-text-action:focus-visible{color:#ffd98c;outline:0;text-decoration:underline dotted 4px;text-underline-offset:9px}"
+    },
+    {
+      "name": "Power Button",
+      "kind": "button",
+      "refersTo": "power-button",
+      "description": "Logo-red circle; the only red control.",
+      "html": "<button class=\"ds-power\" aria-label=\"Power menu\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.6\" stroke-linecap=\"round\" aria-hidden=\"true\"><path d=\"M12 3v8\"/><path d=\"M6.3 6.8a8 8 0 1 0 11.4 0\"/></svg></button>",
+      "css": ".ds-power{width:52px;aspect-ratio:1;display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:#e12929;color:#fff;cursor:pointer;box-shadow:0 8px 18px rgba(0,0,0,.55);transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s ease} .ds-power svg{width:52%;height:52%} .ds-power:hover,.ds-power:focus-visible{transform:scale(1.12);box-shadow:0 10px 22px rgba(0,0,0,.6);outline:0}"
+    },
+    {
+      "name": "Dialog",
+      "kind": "custom",
+      "refersTo": "dialog",
+      "description": "Booth-brown confirmation with display title and two text actions.",
+      "html": "<section class=\"ds-dialog\"><h2>u sure</h2><div class=\"ds-dialog-buttons\"><button>yes</button><button>cancel</button></div></section>",
+      "css": ".ds-dialog{min-width:360px;padding:22px 36px 26px;border-radius:24px;background:#24120f;color:#f6e9cc;font-family:\"Big Shoulders\",\"Arial Narrow\",sans-serif;box-shadow:inset 0 0 0 1px rgba(167,129,75,.45),0 26px 60px rgba(0,0,0,.65)} .ds-dialog h2{font-size:48px;font-weight:700;text-align:center;margin:0 0 22px;letter-spacing:.01em} .ds-dialog-buttons{display:flex;gap:28px;justify-content:space-between} .ds-dialog-buttons button{font:inherit;font-size:36px;font-weight:600;padding:4px 6px;border:0;background:none;color:#bfae91;cursor:pointer;transition:color .15s ease} .ds-dialog-buttons button:hover,.ds-dialog-buttons button:focus-visible{color:#ffd98c;outline:0;text-decoration:underline dotted 4px;text-underline-offset:9px}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "text-field",
+      "description": "Dark field with brass border and bulb caret.",
+      "html": "<input class=\"ds-field\" placeholder=\"https://example.com\">",
+      "css": ".ds-field{background:#160a09;border:1px solid rgba(167,129,75,.55);border-radius:10px;color:#f6e9cc;font-family:\"Big Shoulders\",\"Arial Narrow\",sans-serif;font-size:22px;font-weight:500;padding:10px 12px;caret-color:#ffd98c} .ds-field::placeholder{color:#8d7d66} .ds-field:focus-visible{outline:2px solid #ffd98c;outline-offset:2px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Kino Marquee",
+    "overview": "The living-room cinema at night. The house is near-black oxblood velvet with one warm spotlight falling from above; everything sits quietly in the dark until it is chosen, and then a ring of marquee bulbs lights around it while the rest of the house dims. Launching an app closes a velvet curtain behind the family; returning Home parts it again.\n\nThe screen is read from 2 to 4 m, so density is low and type is large: one condensed display face does every job, set in cream like bulb light. Brass hairlines frame every object instead of borders or fills. Motion is cinematic but restrained: the bulbs pulse slowly rather than chase, and the curtain is the one big move. The system refuses the smart-TV card wall with a blurred backdrop.",
+    "keyCharacteristics": [
+      "Dark velvet house, one top-centre spotlight, vignette to the floor.",
+      "A single typeface (Big Shoulders, self-hosted) for every role.",
+      "Brass inset hairlines frame tiles, cards, panels and dialogs.",
+      "Focus is a dotted bulb ring plus lift; siblings dim to 62%.",
+      "Velvet curtain opens on boot and return, closes on launch."
+    ],
+    "rules": [
+      { "name": "The One Red Rule", "body": "Logo red appears on the B, the power button and selection, nowhere else. Focus is bulb gold, not red.", "section": "colors" },
+      { "name": "The Dark House Rule", "body": "At rest nothing glows. Light (bulb ring, cream label, lifted shadow) is the response to focus or hover.", "section": "colors" },
+      { "name": "The Couch Distance Rule", "body": "No text below 16px; every size is a clamp() keyed to viewport width so 1920x1080 over HDMI reads from the sofa.", "section": "typography" },
+      { "name": "The Lowercase Voice Rule", "body": "Controls and headings are lowercase as written in the copy; never force uppercase or letterspaced caps.", "section": "typography" },
+      { "name": "The Hairline Frame Rule", "body": "Raised surfaces are framed with an inset brass hairline, never an outer border.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do mark focus with the dotted bulb ring (5px dotted, 13px outside, slow 2.4s two-step pulse) plus lift, and dim siblings to 62%.",
+      "Do frame every raised surface with the brass inset hairline and a soft black drop shadow.",
+      "Do keep every size a viewport clamp() with nothing below 16px.",
+      "Do ease state changes on cubic-bezier(.16,1,.3,1), and collapse all motion under prefers-reduced-motion.",
+      "Do self-host the font; the box may boot offline."
+    ],
+    "donts": [
+      "Don't use logo red for focus, accents or decoration beyond the B, the power button and selection.",
+      "Don't animate the bulbs as a running chase or add glow at rest.",
+      "Don't build a smart-TV card wall with a blurred backdrop.",
+      "Don't introduce a second typeface or uppercase letterspaced labels."
+    ]
+  }
+}

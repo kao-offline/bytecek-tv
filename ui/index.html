@@ -3,18 +3,30 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#242424">
+  <meta name="theme-color" content="#120809">
   <title>Bytecek Launcher</title>
   <link rel="stylesheet" href="/style.css">
   <script src="/app.js" defer></script>
 </head>
 <body>
-  <div id="splash" class="splash" aria-hidden="true"><img src="/b.svg" alt=""></div>
-  <div id="launching" class="launching" role="status" hidden><img src="/b.svg" alt=""><p id="launch-label"></p></div>
-  <main class="shell" id="shell">
-    <header class="brand" aria-label="Bytecek"><img src="/b.svg" alt=""><span>ytecek</span></header>
+  <div id="curtain" class="curtain closed" aria-hidden="true">
+    <div class="curtain-half left"></div><div class="curtain-half right"></div>
+    <img class="curtain-logo" src="/b.svg" alt="">
+  </div>
+  <div id="launching" class="launching" role="status" hidden><p id="launch-label"></p></div>
+  <main class="shell enter" id="shell">
+    <header class="top">
+      <div class="brand" aria-label="Bytecek"><img src="/b.svg" alt=""><span>ytecek</span></div>
+      <time class="clock" id="clock"></time>
+    </header>
 
-    <section class="shortcuts" id="shortcuts" aria-label="Applications"></section>
+    <div class="stage">
+      <section class="shortcuts" id="shortcuts" aria-label="Applications"></section>
+      <section class="resume-row" id="resume-row" aria-labelledby="resume-title" hidden>
+        <h2 id="resume-title">continue watching</h2>
+        <div class="resume-list" id="resume-list"></div>
+      </section>
+    </div>
 
     <aside class="power-panel" id="power-panel" aria-label="Power menu" hidden>
       <button class="power-item" data-power="poweroff">shutdown</button>
@@ -22,7 +34,7 @@
       <button class="power-item" data-power="suspend">sleep</button>
     </aside>
 
-    <button class="power-toggle" id="power-toggle" aria-label="Power menu" title="Power menu"></button>
+    <button class="power-toggle" id="power-toggle" aria-label="Power menu" title="Power menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></svg></button>
     <button class="exit" id="exit">exit &gt;</button>
 
     <div class="modal-backdrop" id="confirm" hidden>

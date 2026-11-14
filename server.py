@@ -9,7 +9,7 @@ import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 import window_state
 
 HOST = '127.0.0.1'
@@ -17,7 +17,58 @@ PORT = 8765
 UI = Path(__file__).resolve().parent / 'ui'
 TOKEN = secrets.token_urlsafe(32)
 BROWSER = shutil.which('google-chrome-stable') or shutil.which('google-chrome') or shutil.which('chromium')
-MIMES = {'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.png':'image/png'}
+MIMES = {'.ttf':'font/ttf','.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.png':'image/png'}
+SPILLED_ORIGIN = 'https://spilled.kaooffline.top'
+SPILLED_HOME = SPILLED_ORIGIN + '/'
+STATE_DIR = Path(os.environ.get('XDG_STATE_HOME', Path.home()/'.local/state')) / 'bytecek'
+CONTINUE_FILE = STATE_DIR / 'continue-watching.json'
+PENDING = {'url':None,'at':0.0}
+PENDING_LOCK = threading.Lock()
+
+
+def clean_text(value, limit):
+    return value.strip()[:limit] if isinstance(value, str) else ''
+
+
+def clean_continue(items):
+    """Accept only display fields; episode links are rebuilt here, never taken from the sender."""
+    if not isinstance(items, list):
+        raise ValueError('items must be a list')
+    result = []
+    for item in items[:12]:
+        if not isinstance(item, dict):
+            continue
+        episode = clean_text(item.get('id'), 160)
+        show = clean_text(item.get('show'), 120)
+        if not episode or not show:
+            continue
+        image = item.get('image')
+        image = image if isinstance(image, str) and image.startswith('https://') and valid_web_url(image) else ''
+        progress = item.get('progress')
+        progress = max(0, min(100, int(progress))) if isinstance(progress, (int, float)) and progress == progress else 0
+        result.append({'id':episode,'show':show,'label':clean_text(item.get('label'),120),'left':clean_text(item.get('left'),40),
+                       'image':image,'progress':progress,'url':f'{SPILLED_ORIGIN}/library/watch/{quote(episode, safe="")}'})
+    return result
+
+
+def read_continue():
+    try:
+        data = json.loads(CONTINUE_FILE.read_text(encoding='utf-8'))
+        return {'items':clean_continue(data.get('items',[])),'updatedAt':data.get('updatedAt',0)}
+    except (OSError, ValueError, AttributeError):
+        return {'items':[],'updatedAt':0}
+
+
+def write_continue(items):
+    STATE_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
+    tmp = CONTINUE_FILE.with_suffix('.tmp')
+    tmp.write_text(json.dumps({'items':items,'updatedAt':int(time.time())}), encoding='utf-8')
+    tmp.replace(CONTINUE_FILE)
+
+
+def spilled_episode(url):
+    parts = urlsplit(url)
+    return f'{parts.scheme}://{parts.hostname}' == SPILLED_ORIGIN and parts.path.startswith('/library/watch/')
 
 
 def valid_web_url(value):
@@ -49,9 +100,12 @@ class Handler(BaseHTTPRequestHandler):
         if path == '/api/config':
             self.reply_json(200,{'token':TOKEN,'service':window_state.service_enabled()})
             return
+        if path == '/api/continue':
+            self.reply_json(200,read_continue())
+            return
         if path == '/':
             path = '/index.html'
-        allowed = {'/index.html','/style.css','/app.js','/b.svg'}
+        allowed = {'/index.html','/style.css','/app.js','/b.svg','/fonts/BigShouldersDisplay.ttf'}
         if path not in allowed and path not in {'/icons/spilled.png','/icons/ct24.svg','/icons/chrome.svg'}:
             self.send_error(404)
             return
@@ -68,7 +122,39 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(payload)
 
+    def extension_request(self):
+        """The Bytecek browser extension reports Spilled progress and picks up episode jumps."""
+        try:
+            count = int(self.headers.get('Content-Length','0'))
+            if not 0 < count <= 65536:
+                raise ValueError
+            body = json.loads(self.rfile.read(count))
+            if not isinstance(body, dict):
+                raise ValueError
+        except ValueError:
+            self.reply_json(400,{'error':'Invalid request'})
+            return
+        if self.path == '/api/spilled/continue':
+            try:
+                items = clean_continue(body.get('items'))
+            except ValueError:
+                self.reply_json(400,{'error':'Invalid items'})
+                return
+            write_continue(items)
+            self.reply_json(200,{'ok':True,'count':len(items)})
+            return
+        if self.path == '/api/spilled/pending':
+            with PENDING_LOCK:
+                url = PENDING['url'] if time.time() - PENDING['at'] < 20 else None
+                PENDING['url'] = None
+            self.reply_json(200,{'url':url} if url else {})
+            return
+        self.reply_json(404,{'error':'Unknown action'})
+
     def do_POST(self):
+        if self.path.startswith('/api/spilled/') and (self.headers.get('Origin') or '').startswith('chrome-extension://'):
+            self.extension_request()
+            return
         if self.headers.get('X-Bytecek-Token') != TOKEN or self.headers.get('Origin') != f'http://{HOST}:{PORT}':
             self.reply_json(403,{'error':'Unauthorized request'})
             return
@@ -102,12 +188,22 @@ class Handler(BaseHTTPRequestHandler):
                 self.reply_json(500,{'error':'Chromium/Chrome is missing'})
                 return
             cmd = [BROWSER,'--user-data-dir='+str(Path.home()/'.config/bytecek-sites'),'--password-store=basic','--use-gl=angle','--use-angle=gl','--enable-native-gpu-memory-buffers','--enable-zero-copy','--enable-features=AcceleratedVideoDecodeLinuxGL,AcceleratedVideoDecodeLinuxZeroCopyGL','--force-dark-mode','--force-prefers-reduced-motion=reduce','--load-extension=/opt/bytecek/browser-extension','--no-first-run','--no-default-browser-check','--disable-session-crashed-bubble']
+            key = mode+'|'+url
+            episode = mode == 'app' and spilled_episode(url)
+            if episode:
+                # Reuse the open Spilled window; the extension moves it to the episode.
+                key = 'app|'+SPILLED_HOME
+                with PENDING_LOCK:
+                    PENDING.update(url=url, at=time.time())
             if mode == 'app':
                 cmd += [f'--app={url}']
             else:
                 cmd += ['--new-window','--start-maximized','chrome://newtab/']
             try:
-                window_state.launch(mode+'|'+url,cmd,normal=mode=='browser')
+                reused = window_state.launch(key,cmd,normal=mode=='browser')
+                if episode and not reused:
+                    with PENDING_LOCK:
+                        PENDING['url'] = None
             except OSError as error:
                 self.reply_json(500,{'error':str(error)})
                 return

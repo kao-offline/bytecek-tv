@@ -3,3 +3,4 @@ __pycache__/
 .venv/
 dist/
 preview.png
+.impeccable/hook.cache.json

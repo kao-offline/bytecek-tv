@@ -67,6 +67,8 @@ visudo -cf /etc/sudoers.d/bytecek-power
 cp -f "$SCRIPT_DIR"/ui/{index.html,style.css,app.js,b.svg} /opt/bytecek/ui/
 install -d -m 755 /opt/bytecek/ui/icons
 install -m 644 "$SCRIPT_DIR"/ui/icons/* /opt/bytecek/ui/icons/
+install -d -m 755 /opt/bytecek/ui/fonts
+install -m 644 "$SCRIPT_DIR"/ui/fonts/* /opt/bytecek/ui/fonts/
 find /opt/bytecek/ui -type f -exec chmod 644 {} +
 
 PROFILE=/home/tvbox/.bash_profile

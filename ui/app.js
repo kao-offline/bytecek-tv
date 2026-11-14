@@ -2,13 +2,15 @@
 
 const BASE = [
   {id:'spilled',name:'Spilled',url:'https://spilled.kaooffline.top/',mode:'app',icon:'spilled'},
-  {id:'ct24',name:'ÄŒT24',url:'https://ct24.ceskatelevize.cz/video/zive-vysilani',mode:'app',icon:'ct24'},
+  {id:'ct24',name:'ČT24',url:'https://ct24.ceskatelevize.cz/video/zive-vysilani',mode:'app',icon:'ct24'},
   {id:'chrome',name:'Chrome',url:'https://www.google.com/',mode:'browser',icon:'chrome'}
 ];
 const STORAGE_KEY = 'bytecek-shortcuts-v1';
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = (id) => document.getElementById(id);
 let apiToken = '';
 let shortcuts = [];
+let resumeItems = [];
 let selected = 0;
 let pendingAction = '';
 let priorFocus = null;
@@ -18,8 +20,8 @@ const ICONS = {
   spilled: '<img class="app-icon" src="/icons/spilled.png" alt="">',
   ct24: '<img class="app-icon" src="/icons/ct24.svg" alt="">',
   chrome: '<img class="app-icon" src="/icons/chrome.svg" alt="">',
-  add: `<svg viewBox="0 0 100 100" aria-hidden="true"><path stroke="#292929" stroke-linecap="round" stroke-width="11" d="M50 15v70M15 50h70"/></svg>`,
-  custom: `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="34" stroke="#303030" stroke-width="7" fill="none"/><path d="M16 50h68M50 16a52 52 0 0 1 0 68M50 16a52 52 0 0 0 0 68" fill="none" stroke="#303030" stroke-width="5"/></svg>`
+  add: `<svg viewBox="0 0 100 100" aria-hidden="true"><path stroke="#f6e9cc" stroke-linecap="round" stroke-width="9" d="M50 18v64M18 50h64"/></svg>`,
+  custom: `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="34" stroke="#3a2418" stroke-width="7" fill="none"/><path d="M16 50h68M50 16a52 52 0 0 1 0 68M50 16a52 52 0 0 0 0 68" fill="none" stroke="#3a2418" stroke-width="5"/></svg>`
 };
 
 function loadShortcuts(){
@@ -37,20 +39,15 @@ function tileIcon(item){
   const domain=new URL(item.url).hostname;
   return `<span class="site-fallback">${ICONS.custom}</span><img class="app-icon site-icon" referrerpolicy="no-referrer" src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128" alt="">`;
 }
-function rowTarget(tiles,index,direction){
-  const current=tiles[index].getBoundingClientRect();
-  const candidates=tiles.map((tile,i)=>({i,r:tile.getBoundingClientRect()})).filter(x=>direction*(x.r.top-current.top)>10);
-  if(!candidates.length)return -1;
-  const row=Math.min(...candidates.map(x=>Math.abs(x.r.top-current.top)));
-  return candidates.filter(x=>Math.abs(Math.abs(x.r.top-current.top)-row)<5).sort((a,b)=>Math.abs(a.r.left-current.left)-Math.abs(b.r.left-current.left))[0].i;
-}
+function hoverFocus(el){el.addEventListener('mouseenter',()=>{if(document.activeElement!==el&&$('add-modal').hidden&&$('confirm').hidden)el.focus({preventScroll:true})})}
 function render(){
   const entries=[...BASE,...shortcuts,{id:'add',name:'Add Shortcut',icon:'add'}];
-  const root=$('shortcuts');root.style.setProperty('--columns',Math.min(6,entries.length));root.innerHTML=entries.map((item,index)=>`<button class="tile ${escapeText(item.icon||'custom')}" data-index="${index}" data-id="${escapeText(item.id)}" aria-label="${escapeText(item.name)}" title="${escapeText(item.name)}${item.icon==='custom'?' (Delete to remove)':''}"><span class="tile-square">${tileIcon(item)}</span><span class="tile-label">${escapeText(item.name)}</span></button>`).join('');
+  const root=$('shortcuts');root.style.setProperty('--columns',Math.min(6,entries.length));root.innerHTML=entries.map((item,index)=>`<button class="tile ${escapeText(item.icon||'custom')}" style="--i:${index}" data-index="${index}" data-id="${escapeText(item.id)}" aria-label="${escapeText(item.name)}" title="${escapeText(item.name)}${item.icon==='custom'?' (Delete to remove)':''}"><span class="tile-square">${tileIcon(item)}</span><span class="tile-label">${escapeText(item.name)}</span></button>`).join('');
   root.querySelectorAll('.tile').forEach(tile=>{
     tile.addEventListener('click',()=>activateTile(Number(tile.dataset.index)));
     tile.addEventListener('focus',()=>{selected=Number(tile.dataset.index)});
-    tile.addEventListener('contextmenu',e=>{const x=entries[Number(tile.dataset.index)];if(x.icon!=='custom')return;e.preventDefault();removeShortcut(x.id)})
+    tile.addEventListener('contextmenu',e=>{const x=entries[Number(tile.dataset.index)];if(x.icon!=='custom')return;e.preventDefault();removeShortcut(x.id)});
+    hoverFocus(tile);
   });
   root.querySelectorAll('.site-icon').forEach(img=>{
     img.addEventListener('load',()=>img.previousElementSibling.hidden=true);
@@ -59,7 +56,47 @@ function render(){
   selected=Math.min(selected,entries.length-1);
 }
 
-function focusTile(index){const tiles=[...document.querySelectorAll('.tile')];selected=Math.max(0,Math.min(index,tiles.length-1));tiles[selected]?.focus();tiles[selected]?.scrollIntoView({block:'nearest',inline:'nearest',behavior:'smooth'})}
+/* Continue watching: the browser extension reports Spilled progress to the local service. */
+function renderResume(){
+  const row=$('resume-row'),list=$('resume-list');
+  row.hidden=!resumeItems.length;
+  list.innerHTML=resumeItems.map((item,i)=>{
+    const art=item.image?`<img src="${escapeText(item.image)}" alt="" referrerpolicy="no-referrer" loading="lazy">`:'';
+    const meta=[item.label,item.left].filter(Boolean).join(' · ');
+    return `<button class="resume" style="--i:${BASE.length+shortcuts.length+1+i}" data-resume="${i}" aria-label="${escapeText(item.show)}${meta?', '+escapeText(meta):''}"><span class="resume-art"><span class="resume-initial" aria-hidden="true">${escapeText(item.show.slice(0,1))}</span>${art}</span><span class="resume-text"><span class="resume-show">${escapeText(item.show)}</span><span class="resume-meta">${escapeText(meta)}</span></span><span class="resume-progress" style="--p:${Math.max(0,Math.min(100,Number(item.progress)||0))}%"></span></button>`;
+  }).join('');
+  list.querySelectorAll('.resume').forEach(card=>{
+    card.addEventListener('click',()=>activateResume(Number(card.dataset.resume)));
+    hoverFocus(card);
+  });
+  list.querySelectorAll('img').forEach(img=>img.addEventListener('error',()=>img.remove()));
+}
+async function loadResume(){
+  try{
+    const res=await fetch('/api/continue',{cache:'no-store'});
+    if(!res.ok)return;
+    const data=await res.json();
+    const items=Array.isArray(data?.items)?data.items.filter(x=>x&&typeof x.show==='string'&&isValidUrl(x.url)).slice(0,12):[];
+    if(JSON.stringify(items)===JSON.stringify(resumeItems))return;
+    const hadFocus=document.activeElement?.classList.contains('resume');
+    resumeItems=items;renderResume();
+    if(hadFocus)(document.querySelector('.resume')||document.querySelector('.tile'))?.focus();
+  }catch{}
+}
+
+/* Keyboard: arrows move within a row and between rows by on-screen position. */
+function navItems(){return [...document.querySelectorAll('.tile, .resume')]}
+function rowTarget(items,index,direction){
+  const current=items[index].getBoundingClientRect();
+  const candidates=items.map((el,i)=>({i,r:el.getBoundingClientRect()})).filter(x=>direction*(x.r.top-current.top)>10);
+  if(!candidates.length)return -1;
+  const row=Math.min(...candidates.map(x=>Math.abs(x.r.top-current.top)));
+  const cx=current.left+current.width/2;
+  return candidates.filter(x=>Math.abs(Math.abs(x.r.top-current.top)-row)<5).sort((a,b)=>Math.abs(a.r.left+a.r.width/2-cx)-Math.abs(b.r.left+b.r.width/2-cx))[0].i;
+}
+function focusEl(el){if(!el)return;el.focus({preventScroll:true});el.scrollIntoView({block:'nearest',inline:'nearest',behavior:REDUCED?'auto':'smooth'})}
+function focusTile(index){const tiles=[...document.querySelectorAll('.tile')];selected=Math.max(0,Math.min(index,tiles.length-1));focusEl(tiles[selected])}
+
 let tokenRefresh=null;
 async function refreshToken(){
   if(!tokenRefresh)tokenRefresh=(async()=>{
@@ -81,22 +118,43 @@ async function request(path,payload){
     const data=await res.json();if(!res.ok)throw Error(data.error||'Request failed');return data;
   }catch(e){showToast(e.message);return null}
 }
+
+/* Curtain */
+let awayAfterLaunch=false;
+let curtainFallback;
+function closeCurtain(){$('curtain').classList.add('closed','lit')}
+function openCurtain(){clearTimeout(curtainFallback);awayAfterLaunch=false;$('launching').hidden=true;$('curtain').classList.remove('closed','lit')}
+addEventListener('blur',()=>{if($('curtain').classList.contains('closed'))awayAfterLaunch=true});
+function welcomeBack(){
+  loadResume();
+  if(awayAfterLaunch)setTimeout(openCurtain,REDUCED?0:250);
+}
+addEventListener('focus',welcomeBack);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')welcomeBack()});
+
 function openAdd(){priorFocus=document.activeElement;$('add-form').reset();$('form-error').textContent='';$('add-modal').hidden=false;$('shortcut-name').focus()}
 function closeAdd(){$('add-modal').hidden=true;(priorFocus&&priorFocus.isConnected?priorFocus:document.querySelector('.tile.add'))?.focus()}
 function removeShortcut(id){const s=shortcuts.find(s=>s.id===id);if(!s)return; if(!window.confirm(`Remove ${s.name}?`))return;shortcuts=shortcuts.filter(x=>x.id!==id);saveShortcuts();render();focusTile(0)}
 let launching=false;
-async function activateTile(index){const items=[...BASE,...shortcuts,{id:'add'}];const item=items[index];if(!item)return;if(item.id==='add'){openAdd();return}if(launching)return;launching=true;
-$('launch-label').textContent='Opening '+item.name;$('launching').hidden=false;
-await request('/api/launch',{url:item.url,mode:item.mode||'app'});
-setTimeout(()=>{$('launching').hidden=true;launching=false},900)}
+async function launch(name,url,mode){
+  if(launching)return;launching=true;
+  $('launch-label').textContent='Opening '+name;$('launching').hidden=false;
+  closeCurtain();
+  const ok=await request('/api/launch',{url,mode});
+  setTimeout(()=>{$('launching').hidden=true;launching=false},900);
+  if(!ok){setTimeout(openCurtain,600);return}
+  // The app window normally covers the launcher; the curtain reopens when Home returns.
+  curtainFallback=setTimeout(()=>{if(document.hasFocus())openCurtain()},4500);
+}
+function activateTile(index){const items=[...BASE,...shortcuts,{id:'add'}];const item=items[index];if(!item)return;if(item.id==='add'){openAdd();return}launch(item.name,item.url,item.mode||'app')}
+function activateResume(index){const item=resumeItems[index];if(item)launch(item.show,item.url,'app')}
 function togglePower(force){const panel=$('power-panel');panel.hidden=typeof force==='boolean'?!force:!panel.hidden;if(!panel.hidden){document.querySelector('.power-item').focus()}else{$('power-toggle').focus()}}
 function openConfirm(action){pendingAction=action;priorFocus=document.activeElement; $('confirm').hidden=false;$('confirm-no').focus()}
 function closeConfirm(){$('confirm').hidden=true;(priorFocus?.isConnected?priorFocus:$('power-toggle')).focus()}
-function onPower(action){openConfirm(action)}
 
 $('power-toggle').addEventListener('click',()=>togglePower());
 $('exit').addEventListener('click',()=>openConfirm('exit'));
-$('power-panel').addEventListener('click',e=>{const btn=e.target.closest('[data-power]');if(btn)onPower(btn.dataset.power)});
+$('power-panel').addEventListener('click',e=>{const btn=e.target.closest('[data-power]');if(btn)openConfirm(btn.dataset.power)});
 $('confirm-no').addEventListener('click',closeConfirm);
 $('confirm-yes').addEventListener('click',async()=>{const action=pendingAction;closeConfirm();if(action==='exit')await request('/api/exit',{});else await request('/api/power',{action})});
 $('add-cancel').addEventListener('click',closeAdd);
@@ -119,14 +177,16 @@ document.addEventListener('keydown',e=>{
     const id=document.activeElement.dataset.id;if(id.startsWith('user-')){removeShortcut(id);e.preventDefault();return}
   }
   const target=document.activeElement;
-  const tiles=[...document.querySelectorAll('.tile')];
-  if(target?.classList.contains('tile')){
-    if(e.key==='ArrowRight'){focusTile((selected+1)%tiles.length);e.preventDefault()}
-    else if(e.key==='ArrowLeft'){focusTile((selected-1+tiles.length)%tiles.length);e.preventDefault()}
-    else if(e.key==='ArrowDown'){const next=rowTarget(tiles,selected,1);if(next>=0)focusTile(next);else $('exit').focus();e.preventDefault()}
-    else if(e.key==='ArrowUp'){const next=rowTarget(tiles,selected,-1);if(next>=0)focusTile(next);else $('power-toggle').focus();e.preventDefault()}
+  const items=navItems();
+  const index=items.indexOf(target);
+  if(index>=0){
+    const group=[...target.parentElement.children];const g=group.indexOf(target);
+    if(e.key==='ArrowRight'){focusEl(group[(g+1)%group.length]);e.preventDefault()}
+    else if(e.key==='ArrowLeft'){focusEl(group[(g-1+group.length)%group.length]);e.preventDefault()}
+    else if(e.key==='ArrowDown'){const next=rowTarget(items,index,1);if(next>=0)focusEl(items[next]);else $('exit').focus();e.preventDefault()}
+    else if(e.key==='ArrowUp'){const next=rowTarget(items,index,-1);if(next>=0)focusEl(items[next]);else $('power-toggle').focus();e.preventDefault()}
   }else if(target?.id==='exit'||target?.id==='power-toggle'){
-    if(e.key==='ArrowUp'){focusTile(selected);e.preventDefault()}
+    if(e.key==='ArrowUp'){const last=document.querySelector('.resume')||document.querySelectorAll('.tile')[selected];focusEl(last);e.preventDefault()}
     else if(e.key==='ArrowLeft'){$('power-toggle').focus();e.preventDefault()}
     else if(e.key==='ArrowRight'){$('exit').focus();e.preventDefault()}
   }else if(target?.classList.contains('power-item')){
@@ -137,6 +197,14 @@ document.addEventListener('keydown',e=>{
   }
 });
 
+function tickClock(){$('clock').textContent=new Date().toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'})}
+tickClock();setInterval(tickClock,15000);
+
 shortcuts=loadShortcuts();render();
 refreshToken().catch(()=>showToast('Launcher service unavailable'));
-setTimeout(()=>{$('splash').classList.add('done');setTimeout(()=>{$('splash').remove();focusTile(0)},480)},900);
+loadResume();setInterval(()=>{if(document.visibilityState==='visible')loadResume()},60000);
+
+// Boot: the B lights on the closed curtain, then the curtain parts.
+setTimeout(()=>$('curtain').classList.add('lit'),REDUCED?0:120);
+setTimeout(()=>{openCurtain();focusTile(0)},REDUCED?0:520);
+setTimeout(()=>$('shell').classList.remove('enter'),2600);
