@@ -26,7 +26,18 @@ def windows():
 
 def browser(window):
     cls=output('xprop','-id',window,'WM_CLASS').lower()
-    return 'chromium' in cls or 'chrome' in cls
+    # Home (the launcher's own Chromium) is never an app window.
+    return ('chromium' in cls or 'chrome' in cls) and 'bytecek-launcher' not in cls
+
+def belongs(key,window):
+    """Is this window really the one for this tile? App windows carry the site host
+    in WM_CLASS; the Chrome tile is a plain window of the sites profile."""
+    classes=re.findall(r'"([^"]+)"',output('xprop','-id',window,'WM_CLASS').lower())
+    cls=classes[0] if classes else ''
+    if key.startswith('app|'):
+        host=(urlsplit(key.split('|',1)[1]).hostname or '').lower()
+        return bool(host) and host in cls
+    return cls.startswith('chromium (') and 'bytecek-sites' in cls
 
 def activate(window):
     subprocess.run(['xdotool','windowmap',window,'windowactivate','--sync',window],check=False,timeout=3)
@@ -109,7 +120,7 @@ def launch(key,cmd,normal=False):
     with LOCK:
         entry=load().get(key,{})
         window=entry.get('window')
-        if window in windows() and browser(window) and output('xprop','-id',window,'_NET_WM_PID')==entry.get('pid') and tagged(key,window):
+        if window in windows() and browser(window) and belongs(key,window) and output('xprop','-id',window,'_NET_WM_PID')==entry.get('pid') and tagged(key,window):
             iconic='Iconic' in output('xprop','-id',window,'WM_STATE')
             activate(window)
             if iconic:repaint(window)  # only after exit-to-desktop minimized it
@@ -122,7 +133,7 @@ def launch(key,cmd,normal=False):
         subprocess.Popen(cmd,stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,start_new_session=True)
         # Wait for the WM to register the new top-level window, not for site loading.
         for _ in range(50):
-            fresh=[w for w in windows() if w not in before and browser(w)]
+            fresh=[w for w in windows() if w not in before and browser(w) and belongs(key,w)]
             if fresh:
                 remember(key,fresh[-1])
                 if normal:normal_window(fresh[-1])
@@ -141,7 +152,7 @@ def preload(key,cmd):
         before=set(windows())
         subprocess.Popen(cmd,stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,start_new_session=True)
         for _ in range(600):  # a cold start at boot can take a while
-            fresh=[w for w in windows() if w not in before and browser(w)]
+            fresh=[w for w in windows() if w not in before and browser(w) and belongs(key,w)]
             if fresh:
                 window=fresh[-1]
                 remember(key,window)
