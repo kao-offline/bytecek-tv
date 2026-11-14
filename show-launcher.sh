@@ -3,7 +3,15 @@ set -u
 /opt/bytecek/desktop.sh off
 LAUNCHER="$(xdotool search --name '^Bytecek Launcher( - .*)?$' 2>/dev/null | tail -n 1 || true)"
 if [[ -n "$LAUNCHER" ]]; then
-  touch "/run/user/$(id -u tvbox 2>/dev/null || id -u)/bytecek-home-shown" 2>/dev/null || true
+  RUN="/run/user/$(id -u tvbox 2>/dev/null || id -u)"
+  ACTIVE="$(xdotool getactivewindow 2>/dev/null || true)"
+  if [[ "$ACTIVE" != "$LAUNCHER" ]]; then
+    # The curtain closes over the app/desktop, Home comes up behind it, the curtain opens.
+    rm -f "$RUN/bytecek-curtain-closed"
+    setsid python3 /opt/bytecek/desktop/curtain.py cover 600 >/dev/null 2>&1 </dev/null &
+    for _ in $(seq 1 40); do [[ -e "$RUN/bytecek-curtain-closed" ]] && break; sleep 0.05; done
+  fi
+  touch "$RUN/bytecek-home-shown" 2>/dev/null || true
   xdotool windowmap "$LAUNCHER" windowactivate --sync "$LAUNCHER" 2>/dev/null || true
   exit 0
 fi

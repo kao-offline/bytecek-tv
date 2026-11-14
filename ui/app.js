@@ -124,18 +124,16 @@ async function request(path,payload){
 
 /* Curtain: closes on launch; on return Home it closes over the screen, then opens. */
 let curtainFallback;
-let returning=false;
 let homeShown=null;
 const curtain=()=>$('curtain');
 function closeCurtain(){curtain().classList.add('closed','lit')}
 function openCurtain(){clearTimeout(curtainFallback);$('launching').hidden=true;curtain().classList.remove('closed','lit')}
 function playReturn(){
-  if(returning)return;returning=true;
-  // Normally the curtain is still closed from the launch or exit: just open it.
-  // Wait for the overlay curtain (desktop/curtain.py) over Home to go away first.
-  if(curtain().classList.contains('closed')){setTimeout(()=>{openCurtain();returning=false},REDUCED?0:650);return}
-  closeCurtain();
-  setTimeout(()=>{openCurtain();returning=false},REDUCED?0:1250);
+  // The overlay curtain (desktop/curtain.py) is closed over Home right now and will open
+  // onto it, so Home's own curtain simply opens underneath without animating.
+  if(!curtain().classList.contains('closed'))return;
+  const c=curtain();c.classList.add('instant');openCurtain();void c.offsetWidth;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>c.classList.remove('instant')));
 }
 // show-launcher.sh stamps the moment Home is brought back (F9, Menu, Home key).
 async function checkHomeShown(){

@@ -57,13 +57,16 @@ def ease(t):
     return 4 * t ** 3 if t < .5 else 1 - (-2 * t + 2) ** 3 / 2
 
 
+MARKER = os.path.join(os.environ.get('XDG_RUNTIME_DIR') or os.path.expanduser('~/.cache/bytecek'), 'bytecek-curtain-closed')
+
+
 def main():
-    # curtain.py open  DELAY_MS : closed at once, opens after DELAY_MS (onto the app or desktop)
-    # curtain.py close HOLD_MS  : slides closed over the screen, stays HOLD_MS, then vanishes
+    # curtain.py open  DELAY_MS : closed at once, opens after DELAY_MS (onto an app or the desktop)
+    # curtain.py cover HOLD_MS  : slides closed, touches MARKER, holds HOLD_MS, then opens again
     args = sys.argv[1:]
-    mode = args.pop(0) if args and args[0] in ('open', 'close') else 'open'
+    mode = args.pop(0) if args and args[0] in ('open', 'cover') else 'open'
     wait = int(args[0]) if args else 600
-    closing = mode == 'close'
+    covering = mode == 'cover'
     root = tk.Tk()
     root.withdraw()
     w, h = root.winfo_screenwidth(), root.winfo_screenheight()
@@ -71,25 +74,27 @@ def main():
     gone = int(half * 1.02)
 
     # No compositor here, so the halves are separate windows that slide on/off-screen
-    # and whatever is behind shows through the gap.
+    # and whatever is behind shows through the gap. The right half stops one pixel short
+    # of the screen edge: a window that is fully covered stops drawing in Chromium and
+    # would show stale pixels while the curtain opens.
     images = {False: curtain_half(half, h, False), True: curtain_half(half, h, True)}
 
-    def panel(x, mirror):
+    def panel(x, mirror, width):
         win = tk.Toplevel(root)
         win.withdraw()  # map only once drawn: no blank flash
         win.overrideredirect(True)
-        win.geometry(f'{half}x{h}+{x}+0')
+        win.geometry(f'{width}x{h}+{x}+0')
         win.configure(bg='#2c070c', cursor='none')
-        canvas = tk.Canvas(win, width=half, height=h, highlightthickness=0, bd=0, bg='#2c070c')
+        canvas = tk.Canvas(win, width=width, height=h, highlightthickness=0, bd=0, bg='#2c070c')
         canvas.pack()
-        img = images[mirror]
-        canvas.create_image(0, 0, image=img, anchor='nw')
-        canvas.image = img
+        canvas.create_image(0, 0, image=images[mirror], anchor='nw')
+        canvas.image = images[mirror]
         win.attributes('-topmost', True)
-        return win, img
+        return win
 
-    start_off = gone if closing else 0
-    (left, left_img), (right, right_img) = panel(-start_off, False), panel(w - half + start_off, True)
+    start_off = gone if covering else 0
+    left = panel(-start_off, False, half)
+    right = panel(w - half + start_off, True, half - 1)
     # The B is printed on the fabric: half on each panel, so it parts and meets with
     # the curtain and no separate window ever has to appear or vanish.
     try:
@@ -108,12 +113,11 @@ def main():
 
     def on_top():
         # Raising an app or Home through the WM may stack it above us; stay in front.
-        for win in (left, right):
-            win.lift()
+        left.lift()
+        right.lift()
 
     on_top()
     duration = 1.05
-    start = [None]
     keep_up = [True]
 
     def guard():
@@ -121,25 +125,39 @@ def main():
             on_top()
             root.after(60, guard)
 
-    def frame():
-        if start[0] is None:
-            start[0] = time.monotonic()
-        t = min(1.0, (time.monotonic() - start[0]) / duration)
-        p = ease(t)
-        offset = int(gone * (1 - p)) if closing else int(gone * p)
-        left.geometry(f'+{-offset}+0')
-        right.geometry(f'+{w - half + offset}+0')
-        if t < 1:
-            root.after(8, frame)
-        elif closing:
-            root.after(wait, root.destroy)
-        else:
-            keep_up[0] = False
-            root.after(30, root.destroy)
+    def slide(closing, done):
+        start = time.monotonic()
+
+        def frame():
+            t = min(1.0, (time.monotonic() - start) / duration)
+            p = ease(t)
+            offset = int(gone * (1 - p)) if closing else int(gone * p)
+            left.geometry(f'+{-offset}+0')
+            right.geometry(f'+{w - half + offset}+0')
+            if t < 1:
+                root.after(8, frame)
+            else:
+                done()
+        frame()
+
+    def finish():
+        keep_up[0] = False
+        root.after(30, root.destroy)
+
+    def closed():
+        try:
+            os.makedirs(os.path.dirname(MARKER), exist_ok=True)
+            open(MARKER, 'w').close()
+        except OSError:
+            pass
+        root.after(wait, lambda: slide(False, finish))
 
     guard()
-    root.after(0 if closing else wait, frame)
-    root.after((0 if closing else wait) + 6000, root.destroy)  # never leave the screen covered
+    if covering:
+        root.after(0, lambda: slide(True, closed))
+    else:
+        root.after(wait, lambda: slide(False, finish))
+    root.after(wait + 8000, root.destroy)  # never leave the screen covered
     root.mainloop()
 
 
