@@ -141,8 +141,13 @@ def preload(key,cmd):
             fresh=[w for w in windows() if w not in before and browser(w)]
             if fresh:
                 window=fresh[-1]
-                subprocess.run(['xdotool','windowminimize',window],check=False,timeout=3)
                 remember(key,window)
+                # The WM may not manage the window yet; retry until it is really iconic.
+                for _ in range(40):
+                    subprocess.run(['xdotool','windowminimize',window],check=False,timeout=3)
+                    time.sleep(.25)
+                    if 'Iconic' in output('xprop','-id',window,'WM_STATE'):
+                        break
                 # Give focus back to Home if it is already on screen.
                 home=output('xdotool','search','--name','^Bytecek Launcher( - .*)?$').split()
                 if home:
