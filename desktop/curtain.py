@@ -82,6 +82,10 @@ def main():
     except tk.TclError:
         pass
     root.update()
+    if logo is not None:
+        logo.lift()
+        logo.attributes('-topmost', True)
+        root.update()
 
     duration = 1.05
     start = [None]
