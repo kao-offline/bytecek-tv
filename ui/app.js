@@ -60,10 +60,24 @@ function render(){
 }
 
 function focusTile(index){const tiles=[...document.querySelectorAll('.tile')];selected=Math.max(0,Math.min(index,tiles.length-1));tiles[selected]?.focus();tiles[selected]?.scrollIntoView({block:'nearest',inline:'nearest',behavior:'smooth'})}
+let tokenRefresh=null;
+async function refreshToken(){
+  if(!tokenRefresh)tokenRefresh=(async()=>{
+    const response=await fetch('/api/config',{cache:'no-store'});
+    if(!response.ok)throw Error('Launcher service is unavailable');
+    const data=await response.json();
+    if(!data.token)throw Error('Launcher service is unavailable');
+    apiToken=data.token;
+  })().finally(()=>{tokenRefresh=null});
+  return tokenRefresh;
+}
 async function request(path,payload){
-  if(!apiToken){showToast('Launcher service is unavailable');return null}
   try{
-    const res=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','X-Bytecek-Token':apiToken},body:JSON.stringify(payload)});
+    if(!apiToken)await refreshToken();
+    const send=()=>fetch(path,{method:'POST',headers:{'Content-Type':'application/json','X-Bytecek-Token':apiToken},body:JSON.stringify(payload)});
+    let res=await send();
+    // A service restart invalidates the old token. Rejected requests have no side effects.
+    if(res.status===401||res.status===403){await refreshToken();res=await send()}
     const data=await res.json();if(!res.ok)throw Error(data.error||'Request failed');return data;
   }catch(e){showToast(e.message);return null}
 }
@@ -124,5 +138,5 @@ document.addEventListener('keydown',e=>{
 });
 
 shortcuts=loadShortcuts();render();
-fetch('/api/config').then(r=>r.json()).then(data=>{apiToken=data.token}).catch(()=>showToast('Launcher service unavailable'));
+refreshToken().catch(()=>showToast('Launcher service unavailable'));
 setTimeout(()=>{$('splash').classList.add('done');setTimeout(()=>{$('splash').remove();focusTile(0)},480)},900);

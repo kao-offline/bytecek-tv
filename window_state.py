@@ -1,5 +1,7 @@
 """Reuse live browser windows without navigating them or discarding page state."""
 import json
+import hashlib
+from urllib.parse import urlsplit
 import os
 import re
 import subprocess
@@ -33,7 +35,25 @@ def load():
     except (OSError,ValueError):
         return {}
 
+def tagged(key,window):
+    expected=hashlib.sha256(key.encode()).hexdigest()
+    marker=output('xprop','-id',window,'_BYTECEK_TILE_KEY')
+    if expected in marker:return True
+    # Only migrate untagged windows whose browser/app role matches the tile.
+    if not any(text in marker for text in ('not found','no such atom')):return False
+    classes=re.findall(r'"([^"]+)"',output('xprop','-id',window,'WM_CLASS').lower())
+    cls=classes[0] if classes else ''
+    if key.startswith('app|'):
+        host=urlsplit(key.split('|',1)[1]).hostname or ''
+        matches=bool(host) and host.lower() in cls
+    else:
+        matches=cls.startswith('chromium (') or cls in ('chromium','google-chrome','google-chrome-stable')
+    if matches:
+        subprocess.run(['xprop','-id',window,'-f','_BYTECEK_TILE_KEY','8s','-set','_BYTECEK_TILE_KEY',expected],check=False,timeout=2)
+    return matches
+
 def remember(key,window):
+    subprocess.run(['xprop','-id',window,'-f','_BYTECEK_TILE_KEY','8s','-set','_BYTECEK_TILE_KEY',hashlib.sha256(key.encode()).hexdigest()],check=False,timeout=2)
     state=load()
     state[key]={'window':window,'pid':output('xprop','-id',window,'_NET_WM_PID')}
     STATE.parent.mkdir(mode=0o700,parents=True,exist_ok=True)
@@ -41,16 +61,27 @@ def remember(key,window):
     STATE.chmod(0o600)
 
 def normal_window(window):
+    # A real window, rather than merely an undecorated maximized/fullscreen one.
     subprocess.run(['wmctrl','-ir',window,'-b','remove,fullscreen'],check=False,timeout=3)
-    subprocess.run(['wmctrl','-ir',window,'-b','add,maximized_vert,maximized_horz'],check=False,timeout=3)
+    subprocess.run(['wmctrl','-ir',window,'-b','remove,maximized_vert,maximized_horz'],check=False,timeout=3)
+    try:
+        screen_width,screen_height=map(int,output('xdotool','getdisplaygeometry').split())
+    except ValueError:
+        screen_width,screen_height=1920,1080
+    width=max(640,min(1280,screen_width-100))
+    height=max(480,min(850,screen_height-100))
+    geometry=f'0,{max(0,(screen_width-width)//2)},{max(0,(screen_height-height)//2)},{width},{height}'
+    time.sleep(.15)
+    subprocess.run(['wmctrl','-ir',window,'-e',geometry],check=False,timeout=3)
 
 def launch(key,cmd,normal=False):
     with LOCK:
         entry=load().get(key,{})
         window=entry.get('window')
-        if window in windows() and browser(window) and output('xprop','-id',window,'_NET_WM_PID')==entry.get('pid'):
+        if window in windows() and browser(window) and output('xprop','-id',window,'_NET_WM_PID')==entry.get('pid') and tagged(key,window):
             activate(window)
             if normal:normal_window(window)
+            else:subprocess.run(['wmctrl','-ir',window,'-b','add,fullscreen'],check=False,timeout=3)
             return True
         before=set(windows())
         subprocess.Popen(cmd,stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,start_new_session=True)
@@ -60,6 +91,7 @@ def launch(key,cmd,normal=False):
             if fresh:
                 remember(key,fresh[-1])
                 if normal:normal_window(fresh[-1])
+                else:subprocess.run(['wmctrl','-ir',fresh[-1],'-b','add,fullscreen'],check=False,timeout=3)
                 return False
             time.sleep(.1)
         return False

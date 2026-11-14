@@ -5,11 +5,11 @@ A light custom HDMI TV launcher for **Debian 13 amd64**, styled after the suppli
 ## Screenshot and behavior
 
 - Red **B** splash; dark charcoal screen, top-centered Bytecek logo.
-- Spilled → https://spilled.kaooffline.top/
-- ČT24 → https://ct24.ceskatelevize.cz/video/zive-vysilani
-- Chrome tile → opens your installed **Google Chrome if present**, otherwise Debian Chromium.
-- Add Shortcut (+) → enter a name and web URL; shortcuts persist in Chromium local storage.
-- Red button → shutdown / restart / sleep, with an `u sure` confirmation dialog.
+- Spilled â†’ https://spilled.kaooffline.top/
+- ÄŒT24 â†’ https://ct24.ceskatelevize.cz/video/zive-vysilani
+- Chrome tile â†’ opens your installed **Google Chrome if present**, otherwise Debian Chromium.
+- Add Shortcut (+) â†’ enter a name and web URL; shortcuts persist in Chromium local storage.
+- Red button â†’ shutdown / restart / sleep, with an `u sure` confirmation dialog.
 - `exit >`: hides Home and reveals the desktop launcher button.
 - **F9**: hides the active app and returns Home. Its tile restores the same live window.
 - Custom shortcut: focus and press **Delete** to remove it, or right-click it.
@@ -112,7 +112,7 @@ with `sudo systemctl set-default graphical.target` after uninstalling.
 
 Launcher and websites use separate browser profiles so closing a website with
 F9 leaves Home alive. Websites open fullscreen;
-Chrome opens a separate maximized browser window with tabs, address bar and window controls. A short Opening overlay
+Chrome opens a centered window with tabs, address bar and window controls. A short Opening overlay
 acknowledges launch requests; it is not a website loading progress indicator.
 Saved custom shortcuts stay in the launcher's profile across reinstalls.
 Existing shortcuts from the original release's default Chromium profile must be
@@ -171,7 +171,7 @@ installed under `/usr/local/share/applications` and the TV user's Desktop.
 
 Home/F9 minimizes a site instead of closing it. Selecting its tile restores the
 same window, including its current navigation and video position. Chrome opens
-as a regular maximized browser with tabs and an address bar. Explicitly closing
+as a regular windowed browser with tabs and an address bar. Explicitly closing
 a window with the browser's own close button still closes it. Live page state
 is retained while the browser remains running; this is not a promise to retain
 live playback state through reboot. Hidden tabs may continue audio playback.
@@ -192,3 +192,14 @@ verified with synthetic 1080p H.264 playback: Chromium selected
 the tested codec/path, not hardware support for every stream or codec. The
 Broadwell GPU does not provide modern AV1 hardware decoding. Full-feature driver
 reference: https://github.com/intel/media-driver
+
+The Chrome tile starts new browser windows on `chrome://newtab/` (using the
+existing configured new-tab/search provider) and restores existing browser
+windows without navigating them. Chrome is centered at up to 1280x850 with
+fullscreen and maximization removed. Application windows remain fullscreen.
+Window markers distinguish tiles even when Chromium reuses a closed window ID.
+
+After an API service restart, Home refreshes its local request token and retries
+a rejected request once. This local token is unrelated to Spilled account
+refresh tokens. A revoked Spilled account session still requires signing in
+again; no account security checks are bypassed.

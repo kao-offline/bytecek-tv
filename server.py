@@ -96,7 +96,7 @@ class Handler(BaseHTTPRequestHandler):
             if mode == 'app':
                 cmd += [f'--app={url}','--start-fullscreen']
             else:
-                cmd += ['--new-window','--start-maximized',url]
+                cmd += ['--new-window','--window-size=1280,850','chrome://newtab/']
             try:
                 window_state.launch(mode+'|'+url,cmd,normal=mode=='browser')
             except OSError as error:
