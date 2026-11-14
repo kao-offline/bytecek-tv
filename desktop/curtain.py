@@ -90,34 +90,25 @@ def main():
 
     start_off = gone if closing else 0
     (left, left_img), (right, right_img) = panel(-start_off, False), panel(w - half + start_off, True)
-    logo = None
+    # The B is printed on the fabric: half on each panel, so it parts and meets with
+    # the curtain and no separate window ever has to appear or vanish.
     try:
         logo_img = tk.PhotoImage(file='/opt/bytecek/boot/b.png')
-        lw, lh = logo_img.width(), logo_img.height()
-        logo = tk.Toplevel(root)
-        logo.withdraw()
-        logo.overrideredirect(True)
-        x0, y0 = (w - lw) // 2, (h - lh) // 2
-        # When closing, the B waits off-screen and moves in (no new window flashing up).
-        logo.geometry(f'{lw}x{lh}+{-lw - 50 if closing else x0}+{y0}')
-        lc = tk.Canvas(logo, width=lw, height=lh, highlightthickness=0, bd=0, bg='#320a0f')
-        lc.pack()
-        # The curtain behind the logo, so its transparent edges blend in.
-        lc.create_image(-x0, -y0, image=left_img, anchor='nw')
-        lc.create_image(w - half - x0, -y0, image=right_img, anchor='nw')
-        lc.create_image(0, 0, image=logo_img, anchor='nw')
-        lc.image = logo_img
-        logo.attributes('-topmost', True)
+        x0, y0 = (w - logo_img.width()) // 2, (h - logo_img.height()) // 2
+        for win, origin in ((left, 0), (right, w - half)):
+            canvas = win.winfo_children()[0]
+            canvas.create_image(x0 - origin, y0, image=logo_img, anchor='nw')
+            canvas.logo = logo_img
     except tk.TclError:
-        logo = None
+        pass
     root.update_idletasks()
-    for win in (left, right) + ((logo,) if logo is not None else ()):
-        win.deiconify()
+    left.deiconify()
+    right.deiconify()
     root.update()
 
     def on_top():
         # Raising an app or Home through the WM may stack it above us; stay in front.
-        for win in (left, right) + ((logo,) if logo is not None else ()):
+        for win in (left, right):
             win.lift()
 
     on_top()
@@ -138,11 +129,6 @@ def main():
         offset = int(gone * (1 - p)) if closing else int(gone * p)
         left.geometry(f'+{-offset}+0')
         right.geometry(f'+{w - half + offset}+0')
-        if logo is not None:
-            if closing and t > .9:
-                logo.geometry(f'+{x0}+{y0}')
-            elif not closing and t > .1:
-                logo.geometry(f'+{-lw - 50}+{y0}')
         if t < 1:
             root.after(8, frame)
         elif closing:
