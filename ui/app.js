@@ -165,6 +165,9 @@ async function launch(name,url,mode){
   closeCurtain();
   // Let the curtain finish closing; the app then appears behind its own closed curtain.
   if(!REDUCED)await new Promise(r=>setTimeout(r,850));
+  // Clear the label before the app covers Home, so the frame left behind is just the curtain.
+  $('launching').hidden=true;
+  await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
   const ok=await request('/api/launch',{url,mode});
   setTimeout(()=>{$('launching').hidden=true;launching=false},900);
   if(!ok){setTimeout(openCurtain,600);return}

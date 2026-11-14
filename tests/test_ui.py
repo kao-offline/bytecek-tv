@@ -68,7 +68,7 @@ async def main():
         await page.locator('.tile').first.click()
         assert await page.locator('#launching').is_visible()
         assert await page.locator('#launch-label').inner_text()=='Opening Spilled'
-        await page.wait_for_timeout(2000)
+        await page.wait_for_timeout(2000)  # label clears before the app is raised
         assert not await page.locator('#launching').is_visible()
         for width in (1920,1280,800,480):
             await page.set_viewport_size({'width':width,'height':1080})
