@@ -94,9 +94,9 @@ class Handler(BaseHTTPRequestHandler):
                 return
             cmd = [BROWSER,'--user-data-dir='+str(Path.home()/'.config/bytecek-sites'),'--password-store=basic','--use-gl=angle','--use-angle=gl','--enable-native-gpu-memory-buffers','--enable-zero-copy','--enable-features=AcceleratedVideoDecodeLinuxGL,AcceleratedVideoDecodeLinuxZeroCopyGL','--force-dark-mode','--force-prefers-reduced-motion=reduce','--load-extension=/opt/bytecek/browser-extension','--no-first-run','--no-default-browser-check','--disable-session-crashed-bubble']
             if mode == 'app':
-                cmd += [f'--app={url}','--start-fullscreen']
+                cmd += [f'--app={url}']
             else:
-                cmd += ['--new-window','--window-size=1280,850','chrome://newtab/']
+                cmd += ['--new-window','--start-maximized','chrome://newtab/']
             try:
                 window_state.launch(mode+'|'+url,cmd,normal=mode=='browser')
             except OSError as error:

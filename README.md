@@ -5,11 +5,11 @@ A light custom HDMI TV launcher for **Debian 13 amd64**, styled after the suppli
 ## Screenshot and behavior
 
 - Red **B** splash; dark charcoal screen, top-centered Bytecek logo.
-- Spilled â†’ https://spilled.kaooffline.top/
-- ÄŒT24 â†’ https://ct24.ceskatelevize.cz/video/zive-vysilani
-- Chrome tile â†’ opens your installed **Google Chrome if present**, otherwise Debian Chromium.
-- Add Shortcut (+) â†’ enter a name and web URL; shortcuts persist in Chromium local storage.
-- Red button â†’ shutdown / restart / sleep, with an `u sure` confirmation dialog.
+- Spilled Ã¢â€ â€™ https://spilled.kaooffline.top/
+- Ã„Å’T24 Ã¢â€ â€™ https://ct24.ceskatelevize.cz/video/zive-vysilani
+- Chrome tile Ã¢â€ â€™ opens your installed **Google Chrome if present**, otherwise Debian Chromium.
+- Add Shortcut (+) Ã¢â€ â€™ enter a name and web URL; shortcuts persist in Chromium local storage.
+- Red button Ã¢â€ â€™ shutdown / restart / sleep, with an `u sure` confirmation dialog.
 - `exit >`: hides Home and reveals the desktop launcher button.
 - **F9**: hides the active app and returns Home. Its tile restores the same live window.
 - Custom shortcut: focus and press **Delete** to remove it, or right-click it.
@@ -112,7 +112,7 @@ with `sudo systemctl set-default graphical.target` after uninstalling.
 
 Launcher and websites use separate browser profiles so closing a website with
 F9 leaves Home alive. Websites open fullscreen;
-Chrome opens a centered window with tabs, address bar and window controls. A short Opening overlay
+Chrome opens maximized with tabs, address bar and window controls. A short Opening overlay
 acknowledges launch requests; it is not a website loading progress indicator.
 Saved custom shortcuts stay in the launcher's profile across reinstalls.
 Existing shortcuts from the original release's default Chromium profile must be
@@ -195,8 +195,8 @@ reference: https://github.com/intel/media-driver
 
 The Chrome tile starts new browser windows on `chrome://newtab/` (using the
 existing configured new-tab/search provider) and restores existing browser
-windows without navigating them. Chrome is centered at up to 1280x850 with
-fullscreen and maximization removed. Application windows remain fullscreen.
+windows without navigating them. Chrome fills the display as a maximized browser while retaining its tab strip
+and address bar. Chromium exits its own F11 state before maximization. Application windows remain fullscreen.
 Window markers distinguish tiles even when Chromium reuses a closed window ID.
 
 After an API service restart, Home refreshes its local request token and retries

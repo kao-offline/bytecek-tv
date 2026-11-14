@@ -32,4 +32,11 @@ class WindowReuseTest(unittest.TestCase):
         with patch.object(window_state,'output',side_effect=['_BYTECEK_TILE_KEY: not found.','WM_CLASS(STRING) = "spilled.kaooffline.top", "Chromium"']):
             self.assertFalse(window_state.tagged('browser|url','0x123'))
 
+    def test_browser_exits_internal_fullscreen_before_maximizing(self):
+        with patch.object(window_state,'output',return_value='_NET_WM_STATE_FULLSCREEN'), patch.object(window_state.subprocess,'run') as run, patch.object(window_state.time,'sleep'):
+            window_state.normal_window('0x123')
+            commands=[call.args[0] for call in run.call_args_list]
+            self.assertEqual(commands[0],['xdotool','windowactivate','--sync','0x123','key','--clearmodifiers','F11'])
+            self.assertEqual(commands[-1],['wmctrl','-ir','0x123','-b','add,maximized_vert,maximized_horz'])
+
 if __name__=='__main__':unittest.main()

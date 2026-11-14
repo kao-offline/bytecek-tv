@@ -61,18 +61,12 @@ def remember(key,window):
     STATE.chmod(0o600)
 
 def normal_window(window):
-    # A real window, rather than merely an undecorated maximized/fullscreen one.
+    # Let Chromium leave its own F11 mode so its tabs/address bar return too.
+    if '_NET_WM_STATE_FULLSCREEN' in output('xprop','-id',window,'_NET_WM_STATE'):
+        subprocess.run(['xdotool','windowactivate','--sync',window,'key','--clearmodifiers','F11'],check=False,timeout=3)
+        time.sleep(.3)
     subprocess.run(['wmctrl','-ir',window,'-b','remove,fullscreen'],check=False,timeout=3)
-    subprocess.run(['wmctrl','-ir',window,'-b','remove,maximized_vert,maximized_horz'],check=False,timeout=3)
-    try:
-        screen_width,screen_height=map(int,output('xdotool','getdisplaygeometry').split())
-    except ValueError:
-        screen_width,screen_height=1920,1080
-    width=max(640,min(1280,screen_width-100))
-    height=max(480,min(850,screen_height-100))
-    geometry=f'0,{max(0,(screen_width-width)//2)},{max(0,(screen_height-height)//2)},{width},{height}'
-    time.sleep(.15)
-    subprocess.run(['wmctrl','-ir',window,'-e',geometry],check=False,timeout=3)
+    subprocess.run(['wmctrl','-ir',window,'-b','add,maximized_vert,maximized_horz'],check=False,timeout=3)
 
 def launch(key,cmd,normal=False):
     with LOCK:

@@ -62,7 +62,7 @@ class LauncherServerTest(unittest.TestCase):
             status,_=self.call('POST','/api/launch',{'url':'https://www.google.com/','mode':'browser'})
             self.assertEqual(status,200)
             self.assertNotIn('--start-fullscreen',launch.call_args[0][1])
-            self.assertNotIn('--start-maximized',launch.call_args[0][1])
+            self.assertIn('--start-maximized',launch.call_args[0][1])
             self.assertIn('chrome://newtab/',launch.call_args[0][1])
             self.assertTrue(launch.call_args.kwargs['normal'])
 
