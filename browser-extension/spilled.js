@@ -5,15 +5,24 @@
   const absolute = (u) => { try { const x = new URL(u, location.origin); return x.protocol === 'https:' ? x.href : ''; } catch { return ''; } };
   const order = (a, b) => (a.seasonNumber || 0) - (b.seasonNumber || 0) || (a.episodeNumber || 0) - (b.episodeNumber || 0);
 
+  // Same account key Spilled itself uses, so only the signed-in user's library is read.
+  function accountKey() {
+    try {
+      const c = JSON.parse(localStorage.getItem('spilled.private-node.connection.v1') || '{}');
+      if (c && c.token && c.accountId) return JSON.stringify([c.nodeId || c.nodeUrl, c.accountId]);
+      return localStorage.getItem('spilled-library.legacy-account.v1') ? 'guest' : '';
+    } catch { return ''; }
+  }
+
   function states() {
+    const account = accountKey();
+    if (!account) return [];
     const found = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i) || '';
-      if (!key.startsWith('spilled-library.state.v1') && !key.startsWith('spilled-library.remote-base.v1')) continue;
+    for (const base of ['spilled-library.state.v1', 'spilled-library.remote-base.v1']) {
       try {
-        let value = JSON.parse(localStorage.getItem(key));
+        let value = JSON.parse(localStorage.getItem(`${base}:${account}`) || 'null');
         if (value && value.state && Array.isArray(value.state.shows)) value = value.state;
-        if (value && Array.isArray(value.shows)) found.push(value);
+        if (value && Array.isArray(value.shows)) { found.push(value); break; }
       } catch {}
     }
     return found;
