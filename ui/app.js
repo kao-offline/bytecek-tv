@@ -125,8 +125,10 @@ let curtainFallback;
 function closeCurtain(){$('curtain').classList.add('closed','lit')}
 function openCurtain(){clearTimeout(curtainFallback);awayAfterLaunch=false;$('launching').hidden=true;$('curtain').classList.remove('closed','lit')}
 addEventListener('blur',()=>{if($('curtain').classList.contains('closed'))awayAfterLaunch=true});
+function nothingFocused(){const a=document.activeElement;return !a||a===document.body}
 function welcomeBack(){
   loadResume();
+  if(nothingFocused()&&$('add-modal').hidden&&$('confirm').hidden)focusTile(selected);
   if(awayAfterLaunch)setTimeout(openCurtain,REDUCED?0:250);
 }
 addEventListener('focus',welcomeBack);
@@ -176,6 +178,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Delete'&&document.activeElement?.classList.contains('tile')){
     const id=document.activeElement.dataset.id;if(id.startsWith('user-')){removeShortcut(id);e.preventDefault();return}
   }
+  if(nothingFocused()&&e.key.startsWith('Arrow')){focusTile(selected);e.preventDefault();return}
   const target=document.activeElement;
   const items=navItems();
   const index=items.indexOf(target);
