@@ -51,8 +51,8 @@ class ThemeTest(unittest.TestCase):
             ob = (home / '.config/bytecek/openbox-desktop.xml').read_text()
             self.assertIn('<name>Bytecek</name>', ob)
             self.assertIn('<titleLayout>LIMC', ob)
-            self.assertIn('<size>15</size>', ob)
-            self.assertIn('<size>13</size>', ob)
+            self.assertIn('<size>19</size>', ob)
+            self.assertIn('<size>16</size>', ob)
 
 
 if __name__ == '__main__':

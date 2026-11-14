@@ -132,7 +132,8 @@ function openCurtain(){clearTimeout(curtainFallback);$('launching').hidden=true;
 function playReturn(){
   if(returning)return;returning=true;
   // Normally the curtain is still closed from the launch or exit: just open it.
-  if(curtain().classList.contains('closed')){setTimeout(()=>{openCurtain();returning=false},REDUCED?0:200);return}
+  // Wait for the overlay curtain (desktop/curtain.py) over Home to go away first.
+  if(curtain().classList.contains('closed')){setTimeout(()=>{openCurtain();returning=false},REDUCED?0:650);return}
   closeCurtain();
   setTimeout(()=>{openCurtain();returning=false},REDUCED?0:1250);
 }

@@ -78,6 +78,14 @@ def site_command(url, mode):
     return cmd + ['--new-window','--start-maximized','chrome://newtab/']
 
 
+def curtain(args):
+    try:
+        subprocess.Popen(['python3','/opt/bytecek/desktop/curtain.py',*args],stdin=subprocess.DEVNULL,
+                         stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,start_new_session=True)
+    except OSError:
+        pass
+
+
 def preload_apps():
     """Open Spilled minimized at startup so the first visit is instant.
     CT24 is not preloaded: its live stream autoplays with sound."""
@@ -220,6 +228,10 @@ class Handler(BaseHTTPRequestHandler):
                 key = 'app|'+SPILLED_HOME
                 with PENDING_LOCK:
                     PENDING.update(url=url, at=time.time())
+            # Home's curtain has just closed: put the same curtain above everything, raise
+            # the app behind it, then let it open onto the app.
+            curtain(['open','900'])
+            time.sleep(.45)
             try:
                 reused = window_state.launch(key,cmd,normal=mode=='browser')
                 if episode and not reused:
@@ -251,7 +263,7 @@ class Handler(BaseHTTPRequestHandler):
                 time.sleep(.3)
                 subprocess.run(['/opt/bytecek/desktop.sh','on'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,check=False,timeout=10)
                 # A closed curtain (same look as Home's) covers the switch, then opens onto the desktop.
-                subprocess.Popen(['python3','/opt/bytecek/desktop/curtain.py','1400'],stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,start_new_session=True)
+                subprocess.Popen(['python3','/opt/bytecek/desktop/curtain.py','open','1400'],stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,start_new_session=True)
                 time.sleep(.9)
                 window_state.minimize_apps()  # apps stay behind Home, not on the desktop
                 subprocess.run(['xdotool','search','--name','Bytecek Launcher','windowminimize'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,check=False)

@@ -1,18 +1,52 @@
-Window.SetBackgroundTopColor(0.141, 0.141, 0.141);
-Window.SetBackgroundBottomColor(0.141, 0.141, 0.141);
-logo.image = Image("b.png");
+// Bytecek boot: the B on the dark house ground with a loading bar. Nothing else.
+Window.SetBackgroundTopColor(0.106, 0.043, 0.055);
+Window.SetBackgroundBottomColor(0.043, 0.020, 0.024);
+
+logo.image = Image("b-large.png");
 logo.sprite = Sprite(logo.image);
-logo.sprite.SetX(Window.GetWidth() / 2 - logo.image.GetWidth() / 2);
-logo.sprite.SetY(Window.GetHeight() / 2 - logo.image.GetHeight() / 2);
-status.image = Image.Text("Starting Bytecek TV...", 0.9, 0.9, 0.9);
-status.sprite = Sprite(status.image);
-status.sprite.SetX(Window.GetWidth() / 2 - status.image.GetWidth() / 2);
-status.sprite.SetY(Window.GetHeight() * 0.65);
-// Show disk-encryption prompts rather than hiding a required passphrase.
+logo.x = Window.GetWidth() / 2 - logo.image.GetWidth() / 2;
+logo.y = Window.GetHeight() / 2 - logo.image.GetHeight() / 2 - 40;
+logo.sprite.SetPosition(logo.x, logo.y, 1);
+logo.sprite.SetOpacity(0);
+
+bar.width = 360;
+bar.height = 6;
+bar.x = Window.GetWidth() / 2 - bar.width / 2;
+bar.y = logo.y + logo.image.GetHeight() + 56;
+track.sprite = Sprite(Image("bar-track.png").Scale(bar.width, bar.height));
+track.sprite.SetPosition(bar.x, bar.y, 1);
+fill.source = Image("bar-fill.png");
+fill.sprite = Sprite();
+fill.sprite.SetPosition(bar.x, bar.y, 2);
+
+target = 0;
+shown = 0;
+fade = 0;
+
+fun progress_callback(duration, progress) {
+  if (progress > global.target) global.target = progress;
+}
+
+fun refresh_callback() {
+  // Fade the B in, then ease the bar toward the reported progress.
+  if (global.fade < 1) {
+    global.fade = global.fade + 0.04;
+    if (global.fade > 1) global.fade = 1;
+    logo.sprite.SetOpacity(global.fade);
+  }
+  global.shown = global.shown + (global.target - global.shown) * 0.08;
+  w = Math.Int(bar.width * global.shown);
+  if (w >= 1) fill.sprite.SetImage(fill.source.Scale(w, bar.height));
+}
+
+Plymouth.SetBootProgressFunction(progress_callback);
+Plymouth.SetRefreshFunction(refresh_callback);
+
+// Disk-encryption prompts must stay visible rather than hide a required passphrase.
 fun password_callback(prompt, bullets) {
-  global.password = Sprite(Image.Text(prompt + " " + bullets, 1, 1, 1));
-  password.SetX(Window.GetWidth() * 0.2);
-  password.SetY(Window.GetHeight() * 0.7);
+  text = Image.Text(prompt + " " + bullets, 0.96, 0.91, 0.8);
+  global.password = Sprite(text);
+  password.SetPosition(Window.GetWidth() / 2 - text.GetWidth() / 2, bar.y + 40, 3);
 }
 fun normal_callback() {
   global.password = Sprite();

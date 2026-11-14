@@ -126,7 +126,8 @@ LOGIND
 # Branded initramfs splash and quiet GRUB startup; firmware screens are outside Linux.
 install -d -m 755 /usr/share/plymouth/themes/bytecek
 install -m 644 "$SCRIPT_DIR"/boot/* /usr/share/plymouth/themes/bytecek/
-plymouth-set-default-theme bytecek
+# -R rebuilds the initramfs so the very first boot frames use this theme too.
+plymouth-set-default-theme -R bytecek
 if command -v update-grub >/dev/null 2>&1; then
   mkdir -p /etc/default/grub.d
   cat >/etc/default/grub.d/bytecek.cfg <<'GRUB'

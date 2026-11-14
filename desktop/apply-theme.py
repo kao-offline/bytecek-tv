@@ -42,6 +42,7 @@ ini_set(CONF / 'lxqt/panel.conf', {
     'panel1': {'panelSize': '56', 'iconSize': '36', 'background-color': '#1a0b0d',
                'font-color': '#f6e9cc', 'opacity': '96'},
     'taskbar': {'buttonWidth': '280'},
+    'mainmenu': {'icon': '/opt/bytecek/boot/b-large.png', 'ownIcon': 'true'},
 })
 # Qt apps (file manager, settings): dark theme tinted to the launcher palette, larger font.
 ini_set(CONF / 'lxqt/lxqt.conf', {
@@ -55,14 +56,14 @@ ini_set(CONF / 'lxqt/lxqt.conf', {
 ini_set(CONF / 'pcmanfm-qt/lxqt/settings.conf', {
     'Behavior': {'QuickExec': 'true'},
     'Desktop': {'Wallpaper': '/opt/bytecek/desktop/wallpaper.svg', 'WallpaperMode': 'zoom',
-                'DesktopIconSize': '64', 'FgColor': '#f6e9cc', 'ShadowColor': '#000000',
+                'DesktopIconSize': '80', 'FgColor': '#f6e9cc', 'ShadowColor': '#000000',
                 'Font': '"DejaVu Sans,14,-1,5,50,0,0,0,0,0"'},
 })
 # Openbox for desktop mode: system defaults + Bytecek theme + large title font (= large buttons).
 rc = Path('/etc/xdg/openbox/rc.xml').read_text(encoding='utf-8')
 rc = re.sub(r'<name>[^<]*</name>(\s*<titleLayout>)NLIMC', r'<name>Bytecek</name>\1LIMC', rc, count=1)
-rc = re.sub(r'(<font place="(?:Active|Inactive)Window">\s*<name>)sans(</name>\s*<size>)\d+', r'\1DejaVu Sans\g<2>15', rc)
-rc = re.sub(r'(<font place="Menu(?:Header|Item)">\s*<name>)sans(</name>\s*<size>)\d+', r'\1DejaVu Sans\g<2>13', rc)
+rc = re.sub(r'(<font place="(?:Active|Inactive)Window">\s*<name>)sans(</name>\s*<size>)\d+', r'\1DejaVu Sans\g<2>19', rc)
+rc = re.sub(r'(<font place="Menu(?:Header|Item)">\s*<name>)sans(</name>\s*<size>)\d+', r'\1DejaVu Sans\g<2>16', rc)
 (CONF / 'bytecek').mkdir(parents=True, exist_ok=True)
 (CONF / 'bytecek/openbox-desktop.xml').write_text(rc, encoding='utf-8')
 print('Bytecek desktop theme applied')

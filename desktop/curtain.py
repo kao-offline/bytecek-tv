@@ -45,14 +45,20 @@ def ease(t):
 
 
 def main():
-    delay = int(sys.argv[1]) if len(sys.argv) > 1 else 600
+    # curtain.py open  DELAY_MS : closed at once, opens after DELAY_MS (onto the app or desktop)
+    # curtain.py close HOLD_MS  : slides closed over the screen, stays HOLD_MS, then vanishes
+    args = sys.argv[1:]
+    mode = args.pop(0) if args and args[0] in ('open', 'close') else 'open'
+    wait = int(args[0]) if args else 600
+    closing = mode == 'close'
     root = tk.Tk()
     root.withdraw()
     w, h = root.winfo_screenwidth(), root.winfo_screenheight()
     half = w // 2 + 10
+    gone = int(half * 1.02)
 
-    # No compositor here, so the halves are separate windows that slide off-screen
-    # and the real desktop shows through the opening gap.
+    # No compositor here, so the halves are separate windows that slide on/off-screen
+    # and whatever is behind shows through the gap.
     def panel(x, mirror):
         win = tk.Toplevel(root)
         win.overrideredirect(True)
@@ -66,7 +72,8 @@ def main():
         win.attributes('-topmost', True)
         return win, img
 
-    (left, left_img), (right, right_img) = panel(0, False), panel(w - half, True)
+    start_off = gone if closing else 0
+    (left, left_img), (right, right_img) = panel(-start_off, False), panel(w - half + start_off, True)
     logo = None
     try:
         logo_img = tk.PhotoImage(file='/opt/bytecek/boot/b.png')
@@ -83,33 +90,52 @@ def main():
         lc.create_image(0, 0, image=logo_img, anchor='nw')
         lc.image = logo_img
         logo.attributes('-topmost', True)
+        if closing:
+            logo.withdraw()
     except tk.TclError:
-        pass
+        logo = None
     root.update()
-    if logo is not None:
-        logo.lift()
-        logo.attributes('-topmost', True)
-        root.update()
 
+    def on_top():
+        # Raising an app or Home through the WM may stack it above us; stay in front.
+        for win in (left, right) + ((logo,) if logo is not None and logo.winfo_viewable() else ()):
+            win.lift()
+
+    on_top()
     duration = 1.05
     start = [None]
+    keep_up = [True]
+
+    def guard():
+        if keep_up[0]:
+            on_top()
+            root.after(60, guard)
 
     def frame():
         if start[0] is None:
             start[0] = time.monotonic()
         t = min(1.0, (time.monotonic() - start[0]) / duration)
-        offset = int(half * 1.02 * ease(t))
+        p = ease(t)
+        offset = int(gone * (1 - p)) if closing else int(gone * p)
         left.geometry(f'+{-offset}+0')
         right.geometry(f'+{w - half + offset}+0')
-        if logo is not None and t > .1:
-            logo.withdraw()
+        if logo is not None:
+            if closing and t > .9 and not logo.winfo_viewable():
+                logo.deiconify()
+                logo.lift()
+            elif not closing and t > .1:
+                logo.withdraw()
         if t < 1:
             root.after(8, frame)
+        elif closing:
+            root.after(wait, root.destroy)
         else:
+            keep_up[0] = False
             root.after(30, root.destroy)
 
-    root.after(delay, frame)
-    root.after(delay + 5000, root.destroy)  # never leave the screen covered
+    guard()
+    root.after(0 if closing else wait, frame)
+    root.after((0 if closing else wait) + 6000, root.destroy)  # never leave the screen covered
     root.mainloop()
 
 

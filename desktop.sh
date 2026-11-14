@@ -13,6 +13,8 @@ case "${1:-}" in
     use_wm_config "$( [ -f "$themed" ] && echo "$themed" || echo /etc/xdg/openbox/rc.xml )"
     pgrep -u "$(id -u)" -x lxqt-panel >/dev/null && exit 0
     export XDG_CURRENT_DESKTOP=LXQt XDG_MENU_PREFIX=lxqt- QT_QPA_PLATFORMTHEME=lxqt
+    # TV distance: Qt apps (and anything launched from the panel) 25% larger, GTK text too.
+    export QT_SCALE_FACTOR=1.25 GDK_DPI_SCALE=1.25
     setsid pcmanfm-qt --desktop --profile=lxqt >>/tmp/bytecek-desktop.log 2>&1 </dev/null &
     setsid lxqt-panel >>/tmp/bytecek-desktop.log 2>&1 </dev/null &
     ;;
