@@ -30,6 +30,17 @@ fi
 for group in render video; do
   if getent group "$group" >/dev/null; then usermod -a -G "$group" tvbox; fi
 done
+# New browser profiles use system framing, which Openbox hides for TV use.
+# Never overwrite an existing profile's preferences or account data.
+runuser -u tvbox -- python3 - <<'FRAME_PREFS'
+import json
+from pathlib import Path
+prefs=Path('/home/tvbox/.config/bytecek-sites/Default/Preferences')
+if not prefs.exists():
+    prefs.parent.mkdir(parents=True,exist_ok=True)
+    prefs.write_text(json.dumps({'browser':{'custom_chrome_frame':False}}))
+    prefs.chmod(0o600)
+FRAME_PREFS
 install -d -m 755 /opt/bytecek /opt/bytecek/ui
 install -d -m 755 /opt/bytecek/boot /opt/bytecek/browser-extension
 install -m 644 "$SCRIPT_DIR"/boot/* /opt/bytecek/boot/

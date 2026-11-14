@@ -206,19 +206,15 @@ again; no account security checks are bypassed.
 
 ## TV controls and service mode
 
-The corner Menu handle and expanded controls scale with display resolution.
-At 1080p the handle is 120x44 and the panel is 440x164, with a large Home button.
-The panel collapses again when the pointer moves away. Home/F9 minimizes the
-current app and restores the launcher; returning through a tile keeps the same
-live window and page state.
+A thin Menu handle sits flush with the top-right screen corner. Hover or click
+it to reveal the large Home/F9 button; moving away collapses it. Home minimizes
+the current app and restores the launcher without closing the page. At 1080p,
+the handle is 100x26 and the expanded Home control is 440x72; both scale for TVs.
 
-**Service mode** is available from the corner panel, the Service button on Home,
-or **F10** anywhere in the X session. Enabling it removes fullscreen from tracked
-app windows and allows resizing. Apps launched/resumed while service mode is on
-stay windowed. Select **Lock to TV** or press F10 again to restore app fullscreen.
-The Home screen shows a service-mode indicator. Chrome remains a normal browser
-and is not forced into app fullscreen by either mode.
+Service mode is **F10 only**. There are no service-mode buttons, panels, or
+banners. Press F10 to leave app fullscreen for maintenance; press it again to
+restore TV fullscreen. It defaults to TV mode after reboot.
 
-Service mode is a convenience switch, not a security boundary. It applies to the
-current TV login session and defaults to locked TV mode after reboot. Changing
-modes does not close/reload pages or clear browser/login data.
+Normal minimize/maximize/close title bars and borders are hidden. Chrome keeps
+its tabs and address bar. Its profile uses system framing, which Openbox hides.
+The corner Home button provides the TV-friendly return-to-menu action.
